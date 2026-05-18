@@ -1,0 +1,81 @@
+@page
+@model DisplayModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>LiteQMS Display</title>
+    <link rel="stylesheet" href="~/css/display.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="display-container">
+        <div class="left-panel">
+            <div class="header-bar">
+                <div class="brand">LiteQMS</div>
+                <div class="clock-section">
+                    <div class="clock" id="clock">00:00:00</div>
+                    <div class="date" id="dateDisplay"></div>
+                </div>
+            </div>
+
+            <div class="main-display">
+                <div class="patient-number" id="patientNumber">
+                    @(Model.CurrentState?.PatientNumber ?? "—")
+                </div>
+                <div class="room-label" id="roomLabel">
+                    @(Model.CurrentState?.RoomNumber ?? "—")
+                </div>
+                <div class="just-called-badge" id="justCalledBadge">Just Called</div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="recent-list" id="recentList">
+                @if (Model.CurrentState?.RecentCalls != null && Model.CurrentState.RecentCalls.Any())
+                {
+                    @foreach (var call in Model.CurrentState.RecentCalls.Take(4))
+                    {
+                        <div class="recent-item">
+                            <span class="recent-patient">@call.PatientNumber</span>
+                            <div class="recent-room">
+                                <svg class="recent-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                                </svg>
+                                @call.RoomNumber
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    @for (int i = 0; i < 4; i++)
+                    {
+                        <div class="recent-item empty-state">
+                            <span>—</span>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <audio id="dingDong" preload="auto">
+        <source src="/sounds/ding-dong.wav" type="audio/wav">
+    </audio>
+
+    <div id="audioOverlay" class="audio-overlay">
+        <div class="audio-overlay-content">
+            <div class="audio-overlay-ring"></div>
+            <div class="audio-overlay-icon">🔊</div>
+            <div class="audio-overlay-text">Click anywhere to enable audio</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@8/dist/browser/signalr.min.js"></script>
+    <script src="~/js/display-client.js" asp-append-version="true"></script>
+</body>
+</html>

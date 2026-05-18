@@ -1,0 +1,30 @@
+## Build results
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.log
+
+## User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Visual Studio
+.vs/
+*.vspscc
+*.vssscc
+
+## Database files
+*.db
+*.db-shm
+*.db-wal
+
+## Development settings
+appsettings.Development.json
+
+## Temporary files
+*.tmp
+*.temp
