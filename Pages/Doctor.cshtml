@@ -79,13 +79,84 @@
             0% { transform: scale(0.9); opacity: 0.5; }
             100% { transform: scale(1); opacity: 1; }
         }
-        .call-count-badge {
-            background: #f0fdfa;
-            color: #0d9488;
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
-            font-size: 0.8rem;
+        .recent-section {
+            border-top: 1px solid rgba(20, 184, 166, 0.2);
+            padding: 1rem;
+        }
+        .recent-title {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.7rem;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.75rem;
+        }
+        .recent-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.35rem;
+            background: rgba(255, 255, 255, 0.03);
+            transition: background 0.2s ease;
+        }
+        .recent-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .recent-item.cna {
+            opacity: 0.4;
+        }
+        .recent-item-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .recent-item-number {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .recent-item-room {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.8rem;
+        }
+        .recent-item-time {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.75rem;
+            margin-left: 0.25rem;
+        }
+        .recent-item .btn {
+            padding: 0.15rem 0.5rem;
+            font-size: 0.7rem;
+        }
+        .cna-btn {
+            background: transparent;
+            border: none;
+            padding: 0.3rem 0.75rem;
+            border-radius: 0.35rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .cna-btn.mark {
+            color: #f87171;
+        }
+        .cna-btn.mark:hover {
+            background: rgba(248, 113, 113, 0.15);
+        }
+        .cna-btn.undo {
+            color: #94a3b8;
+        }
+        .cna-btn.undo:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .recent-empty {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 1rem 0;
         }
         .hint-text {
             color: #64748b;
@@ -110,6 +181,7 @@
         }
         .input-wrapper .form-control {
             padding-left: 3rem;
+            padding-right: 2.5rem;
         }
         .validation-icon {
             position: absolute;
@@ -137,7 +209,7 @@
 
     <div class="container py-4">
         <div class="row g-4">
-            <div class="col-lg-7">
+            <div class="col-lg-5">
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title mb-3 fw-semibold">Call Patient</h5>
@@ -173,60 +245,24 @@
                                 <div class="hint-text">Format: 1xxx, 3xxx, 5xxx, 7xxx (4 digits starting with 1, 3, 5, or 7)</div>
                                 <span asp-validation-for="PatientNumber" class="text-danger"></span>
                             </div>
-                            <button type="submit" class="btn btn-success btn-lg w-100" id="callBtn">
-                                Call Patient
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-secondary btn-lg" id="clearBtn">
+                                    Clear
+                                </button>
+                                <button type="submit" class="btn btn-success btn-lg flex-grow-1" id="callBtn">
+                                    Call Patient
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
 
-                <div class="card shadow-sm mt-4">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0 fw-semibold">Recent Calls</h5>
-                            @if (Model.RecentCalls.Count > 0)
-                            {
-                                <span class="call-count-badge">@Model.RecentCalls.Count today</span>
-                            }
-                        </div>
-                        @if (Model.RecentCalls.Count == 0)
-                        {
-                            <p class="text-muted mb-0">No calls yet today.</p>
-                        }
-                        else
-                        {
-                            <div class="list-group">
-                                @foreach (var call in Model.RecentCalls)
-                                {
-                                    <div class="list-group-item d-flex justify-content-between align-items-center @(call.IsCNA ? "opacity-50" : "")">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="@(call.IsCNA ? "text-muted" : "text-success")">
-                                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                                            </svg>
-                                            <div>
-                                                <strong>@call.PatientNumber</strong>
-                                                <small class="text-muted ms-2">@call.Timestamp.ToString("HH:mm")</small>
-                                                @if (call.IsCNA)
-                                                {
-                                                    <span class="badge bg-danger ms-2">CNA</span>
-                                                }
-                                            </div>
-                                        </div>
-                                        <form method="post" asp-page-handler="CNA" class="d-inline">
-                                            <input type="hidden" name="id" value="@call.Id" />
-                                            <button type="submit" class="btn btn-sm @(call.IsCNA ? "btn-outline-secondary" : "btn-outline-danger")">
-                                                @(call.IsCNA ? "Undo CNA" : "CNA")
-                                            </button>
-                                        </form>
-                                    </div>
-                                }
-                            </div>
-                        }
-                    </div>
+                <div class="hint-text mt-3">
+                    Press <kbd>Enter</kbd> to call patient &middot; CNA marks "Called Not Answered"
                 </div>
             </div>
 
-            <div class="col-lg-5">
+            <div class="col-lg-7">
                 <div class="preview-card shadow-sm" id="previewCard">
                     <div class="preview-header">
                         <span class="preview-label">Display Preview</span>
@@ -236,13 +272,44 @@
                         </div>
                     </div>
                     <div class="preview-body" id="previewDisplay">
-                        <div class="preview-room" id="previewRoom">@Model.RoomNumber</div>
-                        <div class="preview-number" id="previewNumber">—</div>
+                        <div class="preview-room" id="previewRoom">@(Model.PreviewRoomNumber ?? Model.RoomNumber)</div>
+                        <div class="preview-number" id="previewNumber">@(Model.PreviewPatientNumber ?? "—")</div>
                     </div>
-                </div>
-
-                <div class="hint-text mt-3">
-                    Press <kbd>Enter</kbd> to call patient &middot; CNA marks "Called Not Answered"
+                    <div class="recent-section">
+                        <div class="recent-title">Recently Called</div>
+                        <div id="previewRecentCalls">
+                            @if (Model.PreviewRecentCalls.Count == 0)
+                            {
+                                <div class="recent-empty">No recent calls</div>
+                            }
+                            else
+                            {
+                                @foreach (var call in Model.PreviewRecentCalls)
+                                {
+                                    <div class="recent-item @(call.IsCNA ? "cna" : "")" id="recent-@call.Id">
+                                        <div class="recent-item-info">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="@(call.IsCNA ? "text-muted" : "text-success")">
+                                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                                            </svg>
+                                            <span class="recent-item-number">@call.PatientNumber</span>
+                                            <span class="recent-item-room">@call.RoomNumber</span>
+                                            <span class="recent-item-time">@call.Timestamp.ToString("HH:mm")</span>
+                                            @if (call.IsCNA)
+                                            {
+                                                <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">CNA</span>
+                                            }
+                                        </div>
+                                        <form method="post" asp-page-handler="CNA" class="d-inline">
+                                            <input type="hidden" name="id" value="@call.Id" />
+                                            <button type="submit" class="cna-btn @(call.IsCNA ? "undo" : "mark")">
+                                                @(call.IsCNA ? "Undo" : "CNA")
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -28,8 +28,11 @@ public class DoctorModel : PageModel
 
     public string RoomNumber { get; set; } = string.Empty;
     public List<CallRecord> RecentCalls { get; set; } = new();
+    public List<RecentCall> PreviewRecentCalls { get; set; } = new();
     public bool IsDuplicate { get; set; }
     public bool ShowFormatWarning { get; set; }
+    public string? PreviewPatientNumber { get; set; }
+    public string? PreviewRoomNumber { get; set; }
 
     public void OnGet()
     {
@@ -41,6 +44,14 @@ public class DoctorModel : PageModel
         }
 
         LoadRecentCalls();
+
+        var state = _queueState.CurrentState;
+        if (state != null)
+        {
+            PreviewPatientNumber = state.PatientNumber;
+            PreviewRoomNumber = state.RoomNumber;
+            PreviewRecentCalls = state.RecentCalls;
+        }
     }
 
     public async Task<IActionResult> OnPost()

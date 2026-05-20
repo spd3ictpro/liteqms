@@ -1,9 +1,17 @@
+using LiteQMS.Services;
 using Microsoft.AspNetCore.SignalR;
 
 namespace LiteQMS.Hubs;
 
 public class QueueHub : Hub
 {
+    private readonly QueueStateService _queueState;
+
+    public QueueHub(QueueStateService queueState)
+    {
+        _queueState = queueState;
+    }
+
     public async Task BroadcastNewCall(CallState state)
     {
         await Clients.All.SendAsync("NewCall", state);
@@ -21,7 +29,11 @@ public class QueueHub : Hub
 
     public async Task RequestCurrentState()
     {
-        await Clients.Caller.SendAsync("RequestStateSync");
+        var state = _queueState.CurrentState;
+        if (state != null)
+        {
+            await Clients.Caller.SendAsync("ReceiveCurrentState", state);
+        }
     }
 }
 
