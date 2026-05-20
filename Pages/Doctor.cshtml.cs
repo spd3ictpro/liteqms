@@ -30,7 +30,6 @@ public class DoctorModel : PageModel
     public List<CallRecord> RecentCalls { get; set; } = new();
     public List<RecentCall> PreviewRecentCalls { get; set; } = new();
     public bool IsDuplicate { get; set; }
-    public bool ShowFormatWarning { get; set; }
     public string? PreviewPatientNumber { get; set; }
     public string? PreviewRoomNumber { get; set; }
 
@@ -71,13 +70,11 @@ public class DoctorModel : PageModel
 
         PatientNumber = PatientNumber.Trim();
 
-        var validPrefixes = new[] { "1", "3", "5", "7" };
-        var isValidFormat = PatientNumber.Length == 4 && validPrefixes.Contains(PatientNumber.Substring(0, 1)) && PatientNumber.All(char.IsDigit);
+        var isValidFormat = PatientNumber.Length == 4 && PatientNumber.All(char.IsDigit);
 
         if (!isValidFormat)
         {
-            ShowFormatWarning = true;
-            ModelState.AddModelError("PatientNumber", "Format should be 1xxx, 3xxx, 5xxx, or 7xxx (4 digits)");
+            ModelState.AddModelError("PatientNumber", "Must be 4 digits");
             LoadRecentCalls();
             return Page();
         }

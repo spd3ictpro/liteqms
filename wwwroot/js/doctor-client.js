@@ -3,6 +3,116 @@ const connection = new signalR.HubConnectionBuilder()
     .withAutomaticReconnect()
     .build();
 
+const digitInputs = [
+    document.getElementById("digit1"),
+    document.getElementById("digit2"),
+    document.getElementById("digit3"),
+    document.getElementById("digit4")
+];
+const hiddenField = document.getElementById("patientNumberHidden");
+const validIcon = document.getElementById("validIcon");
+const invalidIcon = document.getElementById("invalidIcon");
+const syncDot = document.getElementById("syncDot");
+const syncLabel = document.getElementById("syncLabel");
+
+function getCombinedValue() {
+    return digitInputs.map(i => i.value).join("");
+}
+
+function setCombinedValue(val) {
+    const digits = val.padEnd(4, "").slice(0, 4).split("");
+    digitInputs.forEach((input, idx) => {
+        input.value = digits[idx] || "";
+    });
+    updateHiddenAndValidation();
+}
+
+function updateHiddenAndValidation() {
+    const combined = getCombinedValue();
+    hiddenField.value = combined;
+
+    if (combined.length === 4 && /^\d{4}$/.test(combined)) {
+        digitInputs.forEach(i => { i.classList.remove("is-invalid"); i.classList.add("is-valid"); });
+        validIcon.style.display = "inline";
+        invalidIcon.style.display = "none";
+    } else if (combined.length === 4) {
+        digitInputs.forEach(i => { i.classList.remove("is-valid"); i.classList.add("is-invalid"); });
+        validIcon.style.display = "none";
+        invalidIcon.style.display = "inline";
+    } else {
+        digitInputs.forEach(i => { i.classList.remove("is-valid", "is-invalid"); });
+        validIcon.style.display = "none";
+        invalidIcon.style.display = "none";
+    }
+}
+
+function focusNextEmpty() {
+    const idx = digitInputs.findIndex(i => !i.value);
+    if (idx >= 0) digitInputs[idx].focus();
+    else digitInputs[3].focus();
+}
+
+function clearAllDigits() {
+    digitInputs.forEach(i => { i.value = ""; });
+    updateHiddenAndValidation();
+    digitInputs[0].focus();
+}
+
+digitInputs.forEach((input, idx) => {
+    input.addEventListener("input", (e) => {
+        const val = e.target.value.replace(/\D/g, "");
+        e.target.value = val;
+        if (val && idx < 3) {
+            digitInputs[idx + 1].focus();
+        }
+        updateHiddenAndValidation();
+    });
+
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Backspace" && !e.target.value && idx > 0) {
+            digitInputs[idx - 1].focus();
+            digitInputs[idx - 1].value = "";
+            updateHiddenAndValidation();
+        }
+    });
+
+    input.addEventListener("paste", (e) => {
+        e.preventDefault();
+        const paste = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, 4);
+        paste.split("").forEach((char, i) => {
+            if (digitInputs[i]) digitInputs[i].value = char;
+        });
+        updateHiddenAndValidation();
+        focusNextEmpty();
+    });
+
+    input.addEventListener("focus", (e) => {
+        e.target.select();
+    });
+});
+
+document.getElementById("callForm").addEventListener("submit", () => {
+    const btn = document.getElementById("callBtn");
+    btn.disabled = true;
+    btn.innerHTML = `
+        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+        Calling...
+    `;
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+    clearAllDigits();
+});
+
+document.addEventListener("click", (e) => {
+    const recallBtn = e.target.closest(".recall-btn");
+    if (recallBtn) {
+        const patient = recallBtn.dataset.patient;
+        setCombinedValue(patient);
+        digitInputs[3].focus();
+    }
+});
+
 function updatePreview(state) {
     document.getElementById("previewRoom").textContent = state.roomNumber;
     const previewNumber = document.getElementById("previewNumber");
@@ -37,10 +147,13 @@ function renderRecentCalls(recentCalls) {
                 <span class="recent-item-time">${time}</span>
                 ${cnaBadge}
             </div>
-            <form method="post" asp-page-handler="CNA" class="d-inline" action="/Doctor?handler=CNA">
-                <input type="hidden" name="id" value="${call.id}" />
-                <button type="submit" class="${btnClass}">${btnText}</button>
-            </form>
+            <div class="d-flex gap-1">
+                <button type="button" class="recall-btn" data-patient="${call.patientNumber}">Recall</button>
+                <form method="post" asp-page-handler="CNA" class="d-inline" action="/Doctor?handler=CNA">
+                    <input type="hidden" name="id" value="${call.id}" />
+                    <button type="submit" class="${btnClass}">${btnText}</button>
+                </form>
+            </div>
         </div>`;
     }).join("");
 }
@@ -48,6 +161,7 @@ function renderRecentCalls(recentCalls) {
 connection.on("NewCall", (state) => {
     updatePreview(state);
     renderRecentCalls(state.recentCalls);
+    clearAllDigits();
 });
 
 connection.on("ReceiveCurrentState", (state) => {
@@ -88,62 +202,39 @@ connection.on("CNAUpdated", (callRecordId, isCNA) => {
     }
 });
 
+function setSyncStatus(connected) {
+    if (connected) {
+        syncDot.className = "sync-dot connected";
+        syncLabel.textContent = "Connected";
+    } else {
+        syncDot.className = "sync-dot disconnected";
+        syncLabel.textContent = "Disconnected";
+    }
+}
+
+connection.onclose(() => {
+    setSyncStatus(false);
+});
+
+connection.onreconnecting(() => {
+    setSyncStatus(false);
+});
+
+connection.onreconnected(() => {
+    setSyncStatus(true);
+});
+
 async function startConnection() {
     try {
         await connection.start();
         console.log("SignalR connected");
+        setSyncStatus(true);
         await connection.invoke("RequestCurrentState");
     } catch (err) {
         console.error("SignalR connection error:", err);
+        setSyncStatus(false);
         setTimeout(() => startConnection(), 5000);
     }
 }
 
 startConnection();
-
-document.getElementById("callForm").addEventListener("submit", () => {
-    const btn = document.getElementById("callBtn");
-    btn.disabled = true;
-    btn.innerHTML = `
-        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-        Calling...
-    `;
-});
-
-document.getElementById("clearBtn").addEventListener("click", () => {
-    const input = document.getElementById("patientInput");
-    input.value = "";
-    input.classList.remove("is-valid", "is-invalid");
-    input.focus();
-    document.getElementById("validIcon").classList.remove("valid");
-    document.getElementById("invalidIcon").classList.remove("invalid");
-});
-
-const patientInput = document.getElementById("patientInput");
-const validIcon = document.getElementById("validIcon");
-const invalidIcon = document.getElementById("invalidIcon");
-
-patientInput.addEventListener("input", function () {
-    const val = this.value.trim();
-    const validPrefixes = ["1", "3", "5", "7"];
-
-    if (val.length === 4 && validPrefixes.includes(val[0]) && /^\d{4}$/.test(val)) {
-        this.classList.remove("is-invalid");
-        this.classList.add("is-valid");
-        validIcon.classList.add("valid");
-        invalidIcon.classList.remove("invalid");
-    } else if (val.length === 4 && !validPrefixes.includes(val[0])) {
-        this.classList.add("is-invalid");
-        this.classList.remove("is-valid");
-        validIcon.classList.remove("valid");
-        invalidIcon.classList.add("invalid");
-    } else if (val.length > 0) {
-        this.classList.remove("is-valid", "is-invalid");
-        validIcon.classList.remove("valid");
-        invalidIcon.classList.remove("invalid");
-    } else {
-        this.classList.remove("is-valid", "is-invalid");
-        validIcon.classList.remove("valid");
-        invalidIcon.classList.remove("invalid");
-    }
-});

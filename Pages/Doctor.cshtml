@@ -169,29 +169,68 @@
             border-radius: 0.25rem;
             font-size: 0.75rem;
         }
-        .input-wrapper {
-            position: relative;
+        .digit-inputs {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
         }
-        .input-wrapper .input-icon {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #64748b;
+        .digit-input {
+            width: 3.5rem;
+            height: 4rem;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            border: 2px solid var(--border);
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            caret-color: transparent;
         }
-        .input-wrapper .form-control {
-            padding-left: 3rem;
-            padding-right: 2.5rem;
+        .digit-input:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 0.2rem rgba(20, 184, 166, 0.25);
+            outline: none;
         }
-        .validation-icon {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            display: none;
+        .digit-input.is-valid {
+            border-color: var(--success);
         }
-        .validation-icon.valid { color: #059669; display: block; }
-        .validation-icon.invalid { color: #dc2626; display: block; }
+        .digit-input.is-invalid {
+            border-color: var(--danger);
+        }
+        .digit-group-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .sync-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.35rem;
+            transition: background 0.3s ease;
+        }
+        .sync-dot.connected {
+            background: #22c55e;
+            box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+        }
+        .sync-dot.disconnected {
+            background: #ef4444;
+            box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+        }
+        .recall-btn {
+            background: transparent;
+            border: none;
+            padding: 0.3rem 0.75rem;
+            border-radius: 0.35rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #14b8a6;
+            transition: background 0.15s ease;
+        }
+        .recall-btn:hover {
+            background: rgba(20, 184, 166, 0.15);
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -200,6 +239,10 @@
             <div class="d-flex align-items-center gap-3">
                 <span class="navbar-brand mb-0 h1 fw-bold">LiteQMS</span>
                 <span class="room-badge">@Model.RoomNumber</span>
+                <span class="room-badge d-flex align-items-center" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;">
+                    <span class="sync-dot connected" id="syncDot"></span>
+                    <span id="syncLabel">Connected</span>
+                </span>
             </div>
             <div>
                 <a href="/History" class="btn btn-outline-light btn-sm">History</a>
@@ -228,21 +271,25 @@
 
                             <div class="mb-3">
                                 <label asp-for="PatientNumber" class="form-label fw-medium">Patient Number</label>
-                                <div class="input-wrapper">
-                                    <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                        <circle cx="12" cy="7" r="4"/>
-                                    </svg>
-                                    <input asp-for="PatientNumber" type="text" class="form-control form-control-lg"
-                                           placeholder="Enter patient number, e.g., 1234" id="patientInput" autofocus />
-                                    <span class="validation-icon" id="validIcon">
+                                <input type="hidden" asp-for="PatientNumber" id="patientNumberHidden" />
+                                <div class="digit-inputs">
+                                    <input type="text" inputmode="numeric" pattern="[0-9]" maxlength="1"
+                                           class="digit-input" id="digit1" data-index="0" autofocus />
+                                    <input type="text" inputmode="numeric" pattern="[0-9]" maxlength="1"
+                                           class="digit-input" id="digit2" data-index="1" />
+                                    <input type="text" inputmode="numeric" pattern="[0-9]" maxlength="1"
+                                           class="digit-input" id="digit3" data-index="2" />
+                                    <input type="text" inputmode="numeric" pattern="[0-9]" maxlength="1"
+                                           class="digit-input" id="digit4" data-index="3" />
+                                </div>
+                                <div class="text-center mt-2">
+                                    <span id="validIcon" style="display: none; color: #059669;">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                     </span>
-                                    <span class="validation-icon" id="invalidIcon">
+                                    <span id="invalidIcon" style="display: none; color: #dc2626;">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                     </span>
                                 </div>
-                                <div class="hint-text">Format: 1xxx, 3xxx, 5xxx, 7xxx (4 digits starting with 1, 3, 5, or 7)</div>
                                 <span asp-validation-for="PatientNumber" class="text-danger"></span>
                             </div>
                             <div class="d-flex gap-2">
@@ -299,12 +346,15 @@
                                                 <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">CNA</span>
                                             }
                                         </div>
-                                        <form method="post" asp-page-handler="CNA" class="d-inline">
-                                            <input type="hidden" name="id" value="@call.Id" />
-                                            <button type="submit" class="cna-btn @(call.IsCNA ? "undo" : "mark")">
-                                                @(call.IsCNA ? "Undo" : "CNA")
-                                            </button>
-                                        </form>
+                                        <div class="d-flex gap-1">
+                                            <button type="button" class="recall-btn" data-patient="@call.PatientNumber">Recall</button>
+                                            <form method="post" asp-page-handler="CNA" class="d-inline">
+                                                <input type="hidden" name="id" value="@call.Id" />
+                                                <button type="submit" class="cna-btn @(call.IsCNA ? "undo" : "mark")">
+                                                    @(call.IsCNA ? "Undo" : "CNA")
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                 }
                             }
