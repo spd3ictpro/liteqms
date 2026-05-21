@@ -169,9 +169,14 @@
             border-radius: 0.25rem;
             font-size: 0.75rem;
         }
+        .call-patient-card .card-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
         .digit-inputs {
             display: flex;
-            gap: 0.75rem;
+            gap: 1rem;
             justify-content: center;
         }
         .digit-input {
@@ -231,9 +236,37 @@
         .recall-btn:hover {
             background: rgba(20, 184, 166, 0.15);
         }
+        .preview-recall-btn {
+            margin-top: 1rem;
+            padding: 0.5rem 1.5rem;
+            font-size: 0.85rem;
+            border: 1px solid rgba(20, 184, 166, 0.4);
+            border-radius: 0.5rem;
+        }
+        .preview-recall-btn:hover {
+            background: rgba(20, 184, 166, 0.2);
+        }
+        .call-count-badge {
+            margin-top: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+        }
+        .call-count-badge strong {
+            color: #14b8a6;
+            font-weight: 700;
+        }
+        .recall-feedback-success {
+            color: #059669;
+        }
+        .recall-feedback-warning {
+            color: #d97706;
+        }
+        .recall-feedback-error {
+            color: #dc2626;
+        }
     </style>
 </head>
-<body class="bg-light">
+<body class="bg-light" data-room="@Model.RoomNumber">
     <nav class="navbar navbar-dark">
         <div class="container-fluid">
             <div class="d-flex align-items-center gap-3">
@@ -253,23 +286,13 @@
     <div class="container py-4">
         <div class="row g-4">
             <div class="col-lg-5">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3 fw-semibold">Call Patient</h5>
+                <div class="card shadow-sm call-patient-card h-100">
+                    <div class="card-body py-4">
+                        <h5 class="card-title mb-4 fw-semibold">Call Patient</h5>
                         <form method="post" id="callForm">
                             <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
 
-                            @if (Model.IsDuplicate)
-                            {
-                                <div class="alert alert-warning d-flex align-items-center" role="alert">
-                                    <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M8 16A6 6 0 1 1 8 4a6 6 0 0 1 0 12zm.5-5a.5.5 0 0 0-1 0v3a.5.5 0 0 0 1 0v-3zm0-4a.5.5 0 0 0-1 0 .5.5 0 0 0 1 0z"/>
-                                    </svg>
-                                    <div>This patient number was already called today.</div>
-                                </div>
-                            }
-
-                            <div class="mb-3">
+                            <div class="mb-4">
                                 <label asp-for="PatientNumber" class="form-label fw-medium">Patient Number</label>
                                 <input type="hidden" asp-for="PatientNumber" id="patientNumberHidden" />
                                 <div class="digit-inputs">
@@ -291,8 +314,11 @@
                                     </span>
                                 </div>
                                 <span asp-validation-for="PatientNumber" class="text-danger"></span>
+                                <div id="recallFeedback" class="text-center mt-2" style="display: none;">
+                                    <span id="recallFeedbackText" class="fw-medium" style="font-size: 0.85rem;"></span>
+                                </div>
                             </div>
-                            <div class="d-flex gap-2">
+                            <div class="d-flex gap-3">
                                 <button type="button" class="btn btn-outline-secondary btn-lg" id="clearBtn">
                                     Clear
                                 </button>
@@ -310,7 +336,7 @@
             </div>
 
             <div class="col-lg-7">
-                <div class="preview-card shadow-sm" id="previewCard">
+                <div class="preview-card shadow-sm h-100" id="previewCard">
                     <div class="preview-header">
                         <span class="preview-label">Display Preview</span>
                         <div class="d-flex align-items-center gap-2">
@@ -321,6 +347,14 @@
                     <div class="preview-body" id="previewDisplay">
                         <div class="preview-room" id="previewRoom">@(Model.PreviewRoomNumber ?? Model.RoomNumber)</div>
                         <div class="preview-number" id="previewNumber">@(Model.PreviewPatientNumber ?? "—")</div>
+                        <div id="callCountBadge" class="call-count-badge" style="@(Model.PreviewPatientNumber != null && Model.CallCount > 0 ? "" : "display: none;")">
+                            Called <strong id="callCountValue">@(Model.CallCount > 0 ? Model.CallCount + 1 : 0)</strong> times today
+                        </div>
+                        <button type="button" class="recall-btn preview-recall-btn" id="previewRecallBtn"
+                                data-patient="@(Model.PreviewPatientNumber ?? "")"
+                                style="@(string.IsNullOrEmpty(Model.PreviewPatientNumber) ? "display: none;" : "")">
+                            Recall
+                        </button>
                     </div>
                     <div class="recent-section">
                         <div class="recent-title">Recently Called</div>

@@ -14,6 +14,16 @@ const validIcon = document.getElementById("validIcon");
 const invalidIcon = document.getElementById("invalidIcon");
 const syncDot = document.getElementById("syncDot");
 const syncLabel = document.getElementById("syncLabel");
+const roomNumber = document.body.dataset.room || "";
+const recallFeedback = document.getElementById("recallFeedback");
+const recallFeedbackText = document.getElementById("recallFeedbackText");
+
+function showRecallFeedback(message, type) {
+    recallFeedback.style.display = "block";
+    recallFeedbackText.textContent = message;
+    recallFeedbackText.className = `fw-medium recall-feedback-${type}`;
+    setTimeout(() => { recallFeedback.style.display = "none"; }, 4000);
+}
 
 function getCombinedValue() {
     return digitInputs.map(i => i.value).join("");
@@ -104,12 +114,23 @@ document.getElementById("clearBtn").addEventListener("click", () => {
     clearAllDigits();
 });
 
-document.addEventListener("click", (e) => {
+document.addEventListener("click", async (e) => {
     const recallBtn = e.target.closest(".recall-btn");
     if (recallBtn) {
         const patient = recallBtn.dataset.patient;
-        setCombinedValue(patient);
-        digitInputs[3].focus();
+        try {
+            const result = await connection.invoke("CallPatient", patient, roomNumber);
+            if (result.success) {
+                clearAllDigits();
+                showRecallFeedback("Recalled successfully.", "success");
+                updateCallCountBadge(result.callCount);
+            } else {
+                showRecallFeedback(result.error, "error");
+            }
+        } catch (err) {
+            console.error("Recall error:", err);
+            showRecallFeedback("Failed to recall patient. Please try again.", "error");
+        }
     }
 });
 
@@ -121,6 +142,27 @@ function updatePreview(state) {
     previewNumber.classList.remove("pulse");
     void previewNumber.offsetWidth;
     previewNumber.classList.add("pulse");
+
+    const previewRecallBtn = document.getElementById("previewRecallBtn");
+    if (state.patientNumber) {
+        previewRecallBtn.dataset.patient = state.patientNumber;
+        previewRecallBtn.style.display = "inline-block";
+    } else {
+        previewRecallBtn.style.display = "none";
+    }
+
+    updateCallCountBadge(state.callCount);
+}
+
+function updateCallCountBadge(count) {
+    const badge = document.getElementById("callCountBadge");
+    const value = document.getElementById("callCountValue");
+    if (count > 0) {
+        badge.style.display = "block";
+        value.textContent = count;
+    } else {
+        badge.style.display = "none";
+    }
 }
 
 function renderRecentCalls(recentCalls) {

@@ -29,7 +29,7 @@ public class DoctorModel : PageModel
     public string RoomNumber { get; set; } = string.Empty;
     public List<CallRecord> RecentCalls { get; set; } = new();
     public List<RecentCall> PreviewRecentCalls { get; set; } = new();
-    public bool IsDuplicate { get; set; }
+    public int CallCount { get; set; }
     public string? PreviewPatientNumber { get; set; }
     public string? PreviewRoomNumber { get; set; }
 
@@ -84,7 +84,7 @@ public class DoctorModel : PageModel
             .Where(r => r.Timestamp >= today)
             .ToListAsync();
 
-        IsDuplicate = todayCalls.Any(r => r.PatientNumber == PatientNumber && !r.IsCNA);
+        CallCount = todayCalls.Count(r => r.PatientNumber == PatientNumber && !r.IsCNA);
 
         var callRecord = new CallRecord
         {
@@ -109,7 +109,7 @@ public class DoctorModel : PageModel
                 .Select(r => new RecentCall(r.Id, r.RoomNumber, r.PatientNumber, r.Timestamp, r.IsCNA))
                 .ToList();
 
-            var state = new CallState(RoomNumber, PatientNumber, callRecord.Timestamp, recentCalls);
+            var state = new CallState(RoomNumber, PatientNumber, callRecord.Timestamp, recentCalls, CallCount + 1);
             await _queueState.BroadcastStateAsync(state);
 
             _logger.LogInformation("Patient {PatientNumber} called from {RoomNumber} (display updated)", PatientNumber, RoomNumber);

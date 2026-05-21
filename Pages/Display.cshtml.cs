@@ -43,11 +43,15 @@ public class DisplayModel : PageModel
                     .Select(r => new RecentCall(r.Id, r.RoomNumber, r.PatientNumber, r.Timestamp, r.IsCNA))
                     .ToListAsync();
 
+                var callCount = await _db.CallRecords
+                    .CountAsync(r => r.Timestamp >= today && r.PatientNumber == latest.PatientNumber && !r.IsCNA);
+
                 CurrentState = new CallState(
                     latest.RoomNumber,
                     latest.PatientNumber,
                     latest.Timestamp,
-                    recentCalls
+                    recentCalls,
+                    callCount
                 );
                 _queueState.UpdateState(CurrentState);
             }
