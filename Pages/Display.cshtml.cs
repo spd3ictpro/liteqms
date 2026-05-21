@@ -46,12 +46,14 @@ public class DisplayModel : PageModel
                 var callCount = await _db.CallRecords
                     .CountAsync(r => r.Timestamp >= today && r.PatientNumber == latest.PatientNumber && !r.IsCNA);
 
+                var isRecall = callCount > 1;
                 CurrentState = new CallState(
                     latest.RoomNumber,
                     latest.PatientNumber,
                     latest.Timestamp,
                     recentCalls,
-                    callCount
+                    callCount,
+                    isRecall
                 );
                 _queueState.UpdateState(CurrentState);
             }

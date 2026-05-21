@@ -46,8 +46,9 @@ public class QueueHub : Hub
 
         var currentState = _queueState.CurrentState;
         var isSameAsCurrent = currentState != null && currentState.PatientNumber == patientNumber;
+        var isRecall = callCount > 0;
 
-        if (!isSameAsCurrent)
+        if (!isSameAsCurrent || isRecall)
         {
             var recentCalls = todayCalls
                 .Where(r => r.PatientNumber != patientNumber)
@@ -56,7 +57,7 @@ public class QueueHub : Hub
                 .Select(r => new RecentCall(r.Id, r.RoomNumber, r.PatientNumber, r.Timestamp, r.IsCNA))
                 .ToList();
 
-            var state = new CallState(roomNumber, patientNumber, callRecord.Timestamp, recentCalls, newCount);
+            var state = new CallState(roomNumber, patientNumber, callRecord.Timestamp, recentCalls, newCount, isRecall);
             await _queueState.BroadcastStateAsync(state);
         }
 
@@ -93,7 +94,8 @@ public record CallState(
     string PatientNumber,
     DateTime Timestamp,
     List<RecentCall> RecentCalls,
-    int CallCount
+    int CallCount,
+    bool IsRecall
 );
 
 public record RecentCall(

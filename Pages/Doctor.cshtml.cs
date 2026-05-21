@@ -99,8 +99,9 @@ public class DoctorModel : PageModel
 
         var currentState = _queueState.CurrentState;
         var isSameAsCurrent = currentState != null && currentState.PatientNumber == PatientNumber;
+        var isRecall = CallCount > 0;
 
-        if (!isSameAsCurrent)
+        if (!isSameAsCurrent || isRecall)
         {
             var recentCalls = todayCalls
                 .Where(r => r.PatientNumber != PatientNumber)
@@ -109,7 +110,7 @@ public class DoctorModel : PageModel
                 .Select(r => new RecentCall(r.Id, r.RoomNumber, r.PatientNumber, r.Timestamp, r.IsCNA))
                 .ToList();
 
-            var state = new CallState(RoomNumber, PatientNumber, callRecord.Timestamp, recentCalls, CallCount + 1);
+            var state = new CallState(RoomNumber, PatientNumber, callRecord.Timestamp, recentCalls, CallCount + 1, isRecall);
             await _queueState.BroadcastStateAsync(state);
 
             _logger.LogInformation("Patient {PatientNumber} called from {RoomNumber} (display updated)", PatientNumber, RoomNumber);
