@@ -4,10 +4,59 @@ const connection = new signalR.HubConnectionBuilder()
     .build();
 
 let audioEnabled = false;
+let wakeLock = null;
+let fsTimer = null;
+
 const audio = document.getElementById("dingDong");
 const overlay = document.getElementById("audioOverlay");
 const patientNumberEl = document.getElementById("patientNumber");
 const justCalledBadge = document.getElementById("justCalledBadge");
+const syncDot = document.getElementById("syncDot");
+const syncLabel = document.getElementById("syncLabel");
+const reconnectBanner = document.getElementById("reconnectBanner");
+const fullscreenBtn = document.getElementById("fullscreenBtn");
+const fsExpandIcon = document.getElementById("fsExpandIcon");
+const fsCompressIcon = document.getElementById("fsCompressIcon");
+
+function setSyncStatus(status) {
+    syncDot.className = "sync-dot";
+    if (status === "connected") {
+        syncDot.classList.add("connected");
+        syncLabel.textContent = "Connected";
+        reconnectBanner.classList.remove("visible", "reconnecting", "offline");
+    } else if (status === "reconnecting") {
+        syncDot.classList.add("reconnecting");
+        syncLabel.textContent = "Reconnecting...";
+        reconnectBanner.className = "reconnect-banner visible reconnecting";
+        reconnectBanner.textContent = "Reconnecting...";
+    } else {
+        syncDot.classList.add("disconnected");
+        syncLabel.textContent = "Disconnected";
+        reconnectBanner.className = "reconnect-banner visible offline";
+        reconnectBanner.textContent = "Offline — Check your connection";
+    }
+}
+
+connection.onreconnecting(() => setSyncStatus("reconnecting"));
+connection.onreconnected(() => setSyncStatus("connected"));
+connection.onclose(() => setSyncStatus("disconnected"));
+
+async function requestWakeLock() {
+    try {
+        if ("wakeLock" in navigator) {
+            wakeLock = await navigator.wakeLock.request("screen");
+            wakeLock.addEventListener("release", () => { wakeLock = null; });
+        }
+    } catch (err) {
+        console.log("Wake Lock unavailable:", err);
+    }
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && !wakeLock && audioEnabled) {
+        requestWakeLock();
+    }
+});
 
 function enableAudio() {
     if (!audioEnabled) {
@@ -15,8 +64,11 @@ function enableAudio() {
             audio.pause();
             audio.currentTime = 0;
             audioEnabled = true;
-            if (overlay) overlay.style.opacity = "0";
-            setTimeout(() => { if (overlay) overlay.style.display = "none"; }, 300);
+            if (overlay) {
+                overlay.style.opacity = "0";
+                setTimeout(() => { if (overlay) overlay.style.display = "none"; }, 300);
+            }
+            requestWakeLock();
         }).catch(() => {});
     }
 }
@@ -104,8 +156,10 @@ async function startConnection() {
     try {
         await connection.start();
         console.log("SignalR connected");
+        setSyncStatus("connected");
     } catch (err) {
         console.error("SignalR connection error:", err);
+        setSyncStatus("disconnected");
         setTimeout(() => startConnection(), 5000);
     }
 }
@@ -125,3 +179,34 @@ function updateClock() {
 
 updateClock();
 setInterval(updateClock, 1000);
+
+function updateFsIcons(isFullscreen) {
+    fsExpandIcon.style.display = isFullscreen ? "none" : "block";
+    fsCompressIcon.style.display = isFullscreen ? "block" : "none";
+}
+
+fullscreenBtn.addEventListener("click", () => {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+        document.exitFullscreen().catch(() => {});
+    }
+});
+
+document.addEventListener("fullscreenchange", () => {
+    updateFsIcons(!!document.fullscreenElement);
+    resetFsTimer();
+});
+
+function resetFsTimer() {
+    fullscreenBtn.classList.remove("hidden");
+    clearTimeout(fsTimer);
+    fsTimer = setTimeout(() => {
+        fullscreenBtn.classList.add("hidden");
+    }, 3000);
+}
+
+document.addEventListener("mousemove", resetFsTimer);
+document.addEventListener("touchstart", resetFsTimer);
+
+resetFsTimer();

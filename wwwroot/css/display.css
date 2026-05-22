@@ -123,6 +123,11 @@ body {
 }
 
 .clock-section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.clock-info {
     text-align: right;
 }
 
@@ -308,6 +313,93 @@ body {
     font-size: 2.5rem;
     color: var(--text-muted);
     font-weight: 300;
+}
+
+.sync-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.4rem;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+    flex-shrink: 0;
+}
+.sync-dot.connected {
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+.sync-dot.reconnecting {
+    background: #eab308;
+    box-shadow: 0 0 8px rgba(234, 179, 8, 0.6);
+    animation: syncPulse 1s ease-in-out infinite;
+}
+.sync-dot.disconnected {
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+@keyframes syncPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.reconnect-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9998;
+    padding: 0.6rem 1.5rem;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transform: translateY(-100%);
+    transition: transform 0.35s ease;
+}
+.reconnect-banner.visible {
+    transform: translateY(0);
+}
+.reconnect-banner.reconnecting {
+    background: #fef9c3;
+    color: #854d0e;
+}
+.reconnect-banner.offline {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.fullscreen-btn {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.4s ease, background 0.15s ease;
+    opacity: 1;
+    flex-shrink: 0;
+}
+.fullscreen-btn:hover {
+    background: rgba(255, 255, 255, 0.95);
+}
+.fullscreen-btn.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.fullscreen-btn svg {
+    width: 22px;
+    height: 22px;
+    stroke: var(--text-primary);
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.header-bar {
+    gap: 0.75rem;
 }
 
 .audio-overlay {
