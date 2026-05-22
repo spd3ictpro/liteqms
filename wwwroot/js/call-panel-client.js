@@ -191,7 +191,7 @@ function renderRecentCalls(recentCalls) {
             </div>
             <div class="d-flex gap-1">
                 <button type="button" class="recall-btn" data-patient="${call.patientNumber}">Recall</button>
-                <form method="post" asp-page-handler="CNA" class="d-inline" action="/Doctor?handler=CNA">
+                <form method="post" asp-page-handler="CNA" class="d-inline" action="/CallPanel?handler=CNA">
                     <input type="hidden" name="id" value="${call.id}" />
                     <button type="submit" class="${btnClass}">${btnText}</button>
                 </form>

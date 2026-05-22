@@ -8,14 +8,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LiteQMS.Pages;
 
-public class DoctorModel : PageModel
+public class CallPanelModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly QueueStateService _queueState;
     private readonly IHubContext<QueueHub> _hubContext;
-    private readonly ILogger<DoctorModel> _logger;
+    private readonly ILogger<CallPanelModel> _logger;
 
-    public DoctorModel(AppDbContext db, QueueStateService queueState, IHubContext<QueueHub> hubContext, ILogger<DoctorModel> logger)
+    public CallPanelModel(AppDbContext db, QueueStateService queueState, IHubContext<QueueHub> hubContext, ILogger<CallPanelModel> logger)
     {
         _db = db;
         _queueState = queueState;

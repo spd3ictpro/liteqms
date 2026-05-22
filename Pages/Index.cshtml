@@ -1,7 +1,7 @@
 @page
 @model IndexModel
 @{
-    ViewData["Title"] = "Doctor Setup";
+    ViewData["Title"] = "Call Panel";
     Layout = null;
 }
 <!DOCTYPE html>
@@ -65,8 +65,13 @@
                     <div class="brand-icon mx-auto">
                         <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <rect x="4" y="4" width="56" height="56" rx="12" style="fill: var(--primary)"/>
-                            <path d="M32 16v32M16 32h32" stroke="white" stroke-width="6" stroke-linecap="round"/>
-                            <circle cx="32" cy="32" r="20" stroke="white" stroke-width="2" opacity="0.3"/>
+                            <rect x="18" y="20" width="28" height="34" rx="2" fill="white" opacity="0.95"/>
+                            <rect x="22" y="24" width="8" height="8" rx="1" fill="var(--primary)"/>
+                            <rect x="34" y="24" width="8" height="8" rx="1" fill="var(--primary)"/>
+                            <rect x="22" y="36" width="8" height="8" rx="1" fill="var(--primary)"/>
+                            <rect x="34" y="36" width="8" height="8" rx="1" fill="var(--primary)"/>
+                            <rect x="26" y="48" width="12" height="6" rx="1" fill="var(--primary)"/>
+                            <rect x="24" y="14" width="16" height="10" rx="2" fill="white" opacity="0.9"/>
                         </svg>
                     </div>
                     <h1 class="h3 fw-bold" style="color: var(--primary-dark);">LiteQMS</h1>
@@ -81,7 +86,7 @@
                                 <polyline points="9 22 9 12 15 12 15 22"/>
                             </svg>
                             <input asp-for="RoomNumber" type="text" class="form-control form-control-lg"
-                                   placeholder="e.g., Bilik 1, Bilik 2, Bilik 3" autofocus />
+                                    placeholder="e.g., Bilik 1, Bilik 2, Bilik 3" autocomplete="off" autofocus />
                         </div>
                         <span asp-validation-for="RoomNumber" class="text-danger"></span>
                     </div>
@@ -100,5 +105,10 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/theme.js" asp-append-version="true"></script>
+    <script>
+        document.getElementById('RoomNumber').addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    </script>
 </body>
 </html>

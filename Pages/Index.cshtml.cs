@@ -20,7 +20,7 @@ public class IndexModel : PageModel
             return Page();
         }
 
-        HttpContext.Session.SetString("RoomNumber", RoomNumber.Trim());
-        return RedirectToPage("/Doctor");
+        HttpContext.Session.SetString("RoomNumber", RoomNumber.Trim().ToUpper());
+        return RedirectToPage("/CallPanel");
     }
 }

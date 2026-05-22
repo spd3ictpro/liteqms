@@ -41,7 +41,7 @@ Keep summary under 72 chars. List key changes as bullet points.
 ```
 feat: implement color theme system with teal, blue, and dark modes
 
-- Add theme switcher dropdown on Doctor and History pages
+- Add theme switcher dropdown on Call Panel and History pages
 - Add theme dot selector on Index page
 - Persist theme choice via localStorage
 ```
