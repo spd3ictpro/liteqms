@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <style>
         body {
-            background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 50%, #99f6e4 100%);
+            background: var(--index-bg);
             min-height: 100vh;
         }
         .setup-card {
@@ -64,12 +64,12 @@
                 <div class="text-center mb-4">
                     <div class="brand-icon mx-auto">
                         <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="4" y="4" width="56" height="56" rx="12" fill="#0d9488"/>
+                            <rect x="4" y="4" width="56" height="56" rx="12" style="fill: var(--primary)"/>
                             <path d="M32 16v32M16 32h32" stroke="white" stroke-width="6" stroke-linecap="round"/>
                             <circle cx="32" cy="32" r="20" stroke="white" stroke-width="2" opacity="0.3"/>
                         </svg>
                     </div>
-                    <h1 class="h3 fw-bold" style="color: #0f766e;">LiteQMS</h1>
+                    <h1 class="h3 fw-bold" style="color: var(--primary-dark);">LiteQMS</h1>
                     <p class="text-muted">Enter your room number to begin</p>
                 </div>
                 <form method="post">
@@ -90,7 +90,15 @@
             </div>
         </div>
     </div>
-    <div class="footer-text">LiteQMS v1.0</div>
+    <div class="footer-text">
+        LiteQMS v1.0
+        <span class="theme-dots ms-3">
+            <button type="button" class="theme-dot teal theme-btn active" data-theme="teal" title="Teal theme"></button>
+            <button type="button" class="theme-dot blue theme-btn" data-theme="blue" title="Medical Blue theme"></button>
+            <button type="button" class="theme-dot dark theme-btn" data-theme="dark" title="Dark theme"></button>
+        </span>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/theme.js" asp-append-version="true"></script>
 </body>
 </html>

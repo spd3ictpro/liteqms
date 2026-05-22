@@ -14,27 +14,27 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <style>
         .navbar {
-            background: linear-gradient(135deg, #0d9488, #0f766e) !important;
+            background: linear-gradient(135deg, var(--navbar-bg), var(--navbar-bg-end)) !important;
         }
         .table thead th {
             font-weight: 600;
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            border-bottom: 2px solid #0f766e;
+            border-bottom: 2px solid var(--primary-dark);
         }
         .table tbody tr {
             transition: background-color 0.2s ease;
         }
         .table tbody tr:hover {
-            background-color: #f0fdfa;
+            background-color: var(--primary-bg);
         }
         .empty-state {
             text-align: center;
             padding: 3rem 1rem;
         }
         .empty-state svg {
-            color: #cbd5e1;
+            color: var(--text-muted);
             margin-bottom: 1rem;
         }
         .clear-filter {
@@ -49,9 +49,19 @@
     <nav class="navbar navbar-dark">
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1 fw-bold">LiteQMS — Call History</span>
-            <div>
-                <a href="/Doctor" class="btn btn-outline-light btn-sm me-2">Doctor</a>
-                <a href="/Display" class="btn btn-outline-light btn-sm" target="_blank">Display</a>
+            <div class="d-flex align-items-center gap-2">
+                <div class="dropdown theme-dropdown">
+                    <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Change theme">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><button class="dropdown-item theme-btn active" data-theme="teal"><span class="theme-indicator teal"></span>Teal</button></li>
+                        <li><button class="dropdown-item theme-btn" data-theme="blue"><span class="theme-indicator blue"></span>Medical Blue</button></li>
+                        <li><button class="dropdown-item theme-btn" data-theme="dark"><span class="theme-indicator dark"></span>Dark</button></li>
+                    </ul>
+                </div>
+                <a href="/Doctor" class="btn btn-outline-light me-2">Doctor</a>
+                <a href="/Display" class="btn btn-outline-light" target="_blank">Display</a>
             </div>
         </div>
     </nav>
@@ -138,5 +148,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/theme.js" asp-append-version="true"></script>
 </body>
 </html>
