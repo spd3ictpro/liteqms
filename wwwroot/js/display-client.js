@@ -157,6 +157,7 @@ async function startConnection() {
         await connection.start();
         console.log("SignalR connected");
         setSyncStatus("connected");
+        await connection.invoke("RequestCurrentState");
     } catch (err) {
         console.error("SignalR connection error:", err);
         setSyncStatus("disconnected");

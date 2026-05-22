@@ -33,13 +33,12 @@ public class CallPanelModel : PageModel
     public string? PreviewPatientNumber { get; set; }
     public string? PreviewRoomNumber { get; set; }
 
-    public void OnGet()
+    public IActionResult OnGet()
     {
         RoomNumber = HttpContext.Session.GetString("RoomNumber") ?? string.Empty;
         if (string.IsNullOrEmpty(RoomNumber))
         {
-            RedirectToPage("/Index");
-            return;
+            return RedirectToPage("/Index");
         }
 
         LoadRecentCalls();
@@ -51,6 +50,8 @@ public class CallPanelModel : PageModel
             PreviewRoomNumber = state.RoomNumber;
             PreviewRecentCalls = state.RecentCalls;
         }
+
+        return Page();
     }
 
     public async Task<IActionResult> OnPost()
@@ -120,9 +121,7 @@ public class CallPanelModel : PageModel
             _logger.LogInformation("Patient {PatientNumber} called from {RoomNumber} (same as current, display unchanged)", PatientNumber, RoomNumber);
         }
 
-        PatientNumber = string.Empty;
-        LoadRecentCalls();
-        return Page();
+        return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostCNA(int id)
