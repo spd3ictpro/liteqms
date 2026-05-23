@@ -14,6 +14,9 @@ public class AppDbContext : DbContext
             .HasIndex(c => c.Timestamp);
 
         modelBuilder.Entity<CallRecord>()
+            .HasIndex(c => new { c.RoomNumber, c.Timestamp });
+
+        modelBuilder.Entity<CallRecord>()
             .Property(c => c.RoomNumber)
             .IsRequired();
 

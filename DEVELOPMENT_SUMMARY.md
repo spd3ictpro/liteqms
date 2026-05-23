@@ -1,5 +1,5 @@
 # LiteQMS — Development Summary
-# Date: 22 May 2026
+# Date: 23 May 2026
 # Project Path: D:\Programs\liteqms
 
 ---
@@ -19,8 +19,9 @@ It runs locally on one PC, browser-based for all users. No authentication.
 - **Framework:** .NET 9 ASP.NET Core Razor Pages
 - **Real-time:** SignalR (QueueHub at `/queueHub`)
 - **Database:** SQLite (EF Core, file: `LiteQMS.db`)
-- **Styling:** Bootstrap 5 + custom CSS with Inter font (bundled locally)
+- **Styling:** Bootstrap 5 (bundled locally at `wwwroot/lib/bootstrap/`)
 - **Font:** Inter Variable (`wwwroot/fonts/Inter-Variable.ttf`) — no internet dependency
+- **SignalR JS:** Bundled locally at `wwwroot/lib/signalr/` — no internet dependency
 - **Session:** In-memory distributed cache, 8-hour idle timeout
 
 ---
@@ -98,19 +99,19 @@ LiteQMS/
 ├── appsettings.json                    # Connection string, logging config
 ├── LiteQMS.csproj                      # Project file, NuGet packages
 ├── Data/
-│   ├── AppDbContext.cs                 # EF Core DbContext with Timestamp index
+│   ├── AppDbContext.cs                 # EF Core DbContext with indexes on Timestamp + (RoomNumber, Timestamp)
 │   └── CallRecord.cs                   # Entity: Id, RoomNumber, PatientNumber, Timestamp, IsCNA
 ├── Hubs/
-│   └── QueueHub.cs                     # SignalR hub: CallPatient, NewCall, CNAUpdated, QueueReset
+│   ├── QueueHub.cs                     # SignalR hub: CallPatient, ToggleCNA, NewCall, CNAUpdated, QueueReset
 ├── Services/
-│   ├── QueueStateService.cs            # Singleton in-memory state with SignalR broadcast
+│   ├── QueueStateService.cs            # Singleton in-memory state with 8s display timer + FIFO queue
 │   └── MidnightResetService.cs         # Background service: daily reset at midnight
 ├── Pages/
-│   ├── Index.cshtml / .cs              # Room number entry page
-│   ├── CallPanel.cshtml / .cs             # Patient calling interface with live preview
+│   ├── Index.cshtml / .cs              # Room number entry page (with input validation)
+│   ├── CallPanel.cshtml / .cs          # Patient calling interface with live preview + SignalR CNA
 │   ├── Display.cshtml / .cs            # TV/public display page
-│   ├── History.cshtml / .cs            # Call history with date filtering
-│   ├── Error.cshtml / .cs              # Error page
+│   ├── History.cshtml / .cs            # Call history with date range filter (max 90 days)
+│   ├── Error.cshtml / .cs              # User-friendly error page with branding
 │   ├── _ViewImports.cshtml             # Tag helpers, namespace imports
 │   └── _ViewStart.cshtml               # Default layout
 └── wwwroot/
@@ -119,9 +120,12 @@ LiteQMS/
     │   └── display.css                 # Display-specific styles (large typography, animations)
     ├── js/
     │   ├── display-client.js           # Display SignalR client, clock, audio, wake lock, fullscreen
-    │   ├── call-panel-client.js            # Call Panel SignalR client, digit input, preview, recall/CNA
+    │   ├── call-panel-client.js        # Call Panel SignalR client, digit input, preview, recall/CNA
     │   ├── site.js                     # (unused / placeholder)
     │   └── theme.js                    # Theme switcher (teal/blue/dark) with localStorage
+    ├── lib/
+    │   ├── bootstrap/dist/             # Bootstrap 5.3 (CSS + JS, bundled locally)
+    │   └── signalr/dist/browser/       # SignalR JS v8 (bundled locally)
     ├── fonts/
     │   └── Inter-Variable.ttf          # Inter variable font (bundled locally)
     └── sounds/
@@ -188,9 +192,16 @@ LiteQMS/
 
 ## HOW TO RUN
 
+### Development
 ```bash
 cd D:\Programs\liteqms
 dotnet run --urls "http://localhost:5000"
+```
+
+### Production (self-contained .exe)
+```bash
+dotnet publish -c Release -r win-x64 --self-contained true -o .\dist
+.\dist\LiteQMS.exe --urls "http://localhost:5000"
 ```
 
 Then open:
@@ -228,6 +239,27 @@ Then open:
 - [x] Wake Lock API integration to prevent screen sleep on display page
 - [x] SignalR automatic reconnect with connection status indicator
 - [x] Recall button on both Call Panel preview and recent call items
+- [x] Session expiry redirect (OnGet returns IActionResult instead of void)
+- [x] Post-Redirect-Get pattern (no F5 duplicate submissions)
+- [x] Display requests current state on SignalR reconnect
+- [x] 8-second minimum display time with FIFO queue for rapid calls
+- [x] Same-number recall ignored during active display timer (prevents abuse)
+- [x] Thread-safe queue management with lock()
+
+### Stage 4 — Hardening (23 May 2026)
+- [x] Error resilience: try-catch on all DB/SignalR operations + user-friendly error page
+- [x] Room number input validation (character whitelist + 50 char max)
+- [x] Date range clamping on History page (max 90 days)
+- [x] CNA toggle via SignalR hub method (replaced form POST, fixed anti-forgery issue)
+- [x] Database performance: AsNoTracking() on all read-only queries
+- [x] Composite index (RoomNumber, Timestamp) for faster queries
+- [x] SQLite CommandTimeout(30) to prevent hung queries
+- [x] Thread safety: lock() on all _currentState access in QueueStateService
+
+### Stage 5 — Production Readiness (23 May 2026)
+- [x] Bootstrap 5 bundled locally (removed CDN dependency)
+- [x] SignalR JS v8 bundled locally (removed CDN dependency)
+- [x] Zero internet dependency for all pages
 
 ---
 
@@ -237,7 +269,9 @@ Then open:
 - [ ] Multi-display support (different displays for different rooms)
 - [ ] Queue management features (skip, reorder)
 - [ ] Export history to CSV
-- [ ] Production deployment config (HTTPS, reverse proxy)
 - [ ] Unit/integration tests
-- [ ] Error handling improvements (DB connection failures, etc.)
 - [ ] Pagination on History page for large datasets
+- [ ] In-app update checker (/Updates page with GitHub API)
+- [ ] System tray icon (WinExe + NotifyIcon)
+- [ ] Inno Setup installer (setup.iss + publish.bat)
+- [ ] Auto-open browser on startup

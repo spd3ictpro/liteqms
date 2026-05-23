@@ -15,9 +15,14 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "Data Source=LiteQMS.db";
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? "Data Source=LiteQMS.db"));
+    options.UseSqlite(connectionString, sqlOptions =>
+    {
+        sqlOptions.CommandTimeout(30);
+    }));
 
 builder.Services.AddSingleton<QueueStateService>();
 builder.Services.AddHostedService<MidnightResetService>();
@@ -30,9 +35,10 @@ using (var scope = app.Services.CreateScope())
     db.Database.EnsureCreated();
 }
 
+app.UseExceptionHandler("/Error");
+
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
 

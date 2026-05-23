@@ -42,17 +42,24 @@ public class MidnightResetService : BackgroundService
 
             _logger.LogInformation("Performing midnight queue reset");
 
-            await _queueState.ResetStateAsync();
+            try
+            {
+                await _queueState.ResetStateAsync();
 
-            using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            var yesterday = DateTime.Now.Date;
-            await db.CallRecords
-                .Where(r => r.Timestamp < yesterday)
-                .ExecuteDeleteAsync(stoppingToken);
+                var yesterday = DateTime.Now.Date;
+                var deleted = await db.CallRecords
+                    .Where(r => r.Timestamp < yesterday)
+                    .ExecuteDeleteAsync(stoppingToken);
 
-            _logger.LogInformation("Midnight reset completed");
+                _logger.LogInformation("Midnight reset completed — deleted {Count} old records", deleted);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Midnight reset failed");
+            }
         }
     }
 }

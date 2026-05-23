@@ -131,6 +131,17 @@ document.addEventListener("click", async (e) => {
             console.error("Recall error:", err);
             showRecallFeedback("Failed to recall patient. Please try again.", "error");
         }
+        return;
+    }
+
+    const cnaBtn = e.target.closest(".cna-btn");
+    if (cnaBtn) {
+        const id = parseInt(cnaBtn.dataset.cnaId);
+        try {
+            await connection.invoke("ToggleCNA", id);
+        } catch (err) {
+            console.error("CNA toggle error:", err);
+        }
     }
 });
 
@@ -191,10 +202,7 @@ function renderRecentCalls(recentCalls) {
             </div>
             <div class="d-flex gap-1">
                 <button type="button" class="recall-btn" data-patient="${call.patientNumber}">Recall</button>
-                <form method="post" asp-page-handler="CNA" class="d-inline" action="/CallPanel?handler=CNA">
-                    <input type="hidden" name="id" value="${call.id}" />
-                    <button type="submit" class="${btnClass}">${btnText}</button>
-                </form>
+                <button type="button" class="${btnClass}" data-cna-id="${call.id}" data-cna-active="${call.isCNA}">${btnText}</button>
             </div>
         </div>`;
     }).join("");
@@ -226,19 +234,19 @@ connection.on("CNAUpdated", (callRecordId, isCNA) => {
                 newBadge.textContent = "CNA";
                 timeEl.after(newBadge);
             }
-            const btn = item.querySelector("button");
-            if (btn) {
-                btn.className = "cna-btn undo";
-                btn.textContent = "Undo";
+            const cnaBtn = item.querySelector(".cna-btn");
+            if (cnaBtn) {
+                cnaBtn.className = "cna-btn undo";
+                cnaBtn.textContent = "Undo";
             }
         } else {
             item.classList.remove("cna");
             const badge = item.querySelector(".badge");
             if (badge) badge.remove();
-            const btn = item.querySelector("button");
-            if (btn) {
-                btn.className = "cna-btn mark";
-                btn.textContent = "CNA";
+            const cnaBtn = item.querySelector(".cna-btn");
+            if (cnaBtn) {
+                cnaBtn.className = "cna-btn mark";
+                cnaBtn.textContent = "CNA";
             }
         }
     }

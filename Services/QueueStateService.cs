@@ -7,22 +7,36 @@ namespace LiteQMS.Services;
 public class QueueStateService
 {
     private readonly IHubContext<QueueHub> _hubContext;
+    private readonly ILogger<QueueStateService> _logger;
     private readonly ConcurrentQueue<CallState> _pendingQueue = new();
     private readonly object _lock = new();
     private CallState? _currentState;
     private System.Timers.Timer? _displayTimer;
     private const int DisplayDurationMs = 8000;
 
-    public CallState? CurrentState => _currentState;
+    public CallState? CurrentState
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _currentState;
+            }
+        }
+    }
 
-    public QueueStateService(IHubContext<QueueHub> hubContext)
+    public QueueStateService(IHubContext<QueueHub> hubContext, ILogger<QueueStateService> logger)
     {
         _hubContext = hubContext;
+        _logger = logger;
     }
 
     public void UpdateState(CallState state)
     {
-        _currentState = state;
+        lock (_lock)
+        {
+            _currentState = state;
+        }
     }
 
     public async Task BroadcastStateAsync(CallState state)
@@ -46,7 +60,16 @@ public class QueueStateService
         }
 
         if (broadcast)
-            await _hubContext.Clients.All.SendAsync("NewCall", state);
+        {
+            try
+            {
+                await _hubContext.Clients.All.SendAsync("NewCall", state);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "SignalR broadcast failed in BroadcastStateAsync for patient {PatientNumber}", state.PatientNumber);
+            }
+        }
     }
 
     private void StartTimerLocked()
@@ -59,27 +82,33 @@ public class QueueStateService
 
     private void OnTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
     {
-        CallState? next;
+        CallState? next = null;
 
         lock (_lock)
         {
             if (_pendingQueue.TryDequeue(out var dequeued))
             {
                 next = dequeued;
+                _currentState = next;
                 StartTimerLocked();
             }
             else
             {
                 _displayTimer?.Dispose();
                 _displayTimer = null;
-                next = null;
             }
         }
 
         if (next != null)
         {
-            _currentState = next;
-            _hubContext.Clients.All.SendAsync("NewCall", next);
+            try
+            {
+                _hubContext.Clients.All.SendAsync("NewCall", next);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "SignalR broadcast failed in OnTimerElapsed for patient {PatientNumber}", next.PatientNumber);
+            }
         }
     }
 
@@ -92,9 +121,9 @@ public class QueueStateService
             _displayTimer?.Stop();
             _displayTimer?.Dispose();
             _displayTimer = null;
+            _currentState = null;
         }
 
-        _currentState = null;
         await _hubContext.Clients.All.SendAsync("QueueReset");
     }
 }

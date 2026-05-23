@@ -1,0 +1,239 @@
+LiteQMS — Session Log
+Date: 23 May 2026
+Project: D:\Programs\liteqms
+Model: opencode/deepseek-v4-flash-free
+
+============================================================
+SESSION SUMMARY
+============================================================
+
+1. READ previous session log (session-22-may-2026.txt)
+
+2. DISCUSSED and IMPLEMENTED Stage 4 - Hardening (Items 1-4)
+
+3. DISCUSSED and STARTED Stage 5 - Production (Item 5a)
+
+============================================================
+ITEM 1 — Error Handling & Resilience
+============================================================
+
+Goal: Prevent crashes from SignalR failures, DB errors, and unhandled exceptions.
+
+Changes:
+
+1a. Services/QueueStateService.cs
+    - Added ILogger<QueueStateService> injection
+    - Wrapped both SendAsync("NewCall", state) calls in try-catch (BroadcastStateAsync + OnTimerElapsed)
+    - Logs warning on broadcast failure instead of crashing
+
+1b. Services/MidnightResetService.cs
+    - Wrapped ResetStateAsync + ExecuteDeleteAsync in try-catch
+    - Logs deleted row count on success, LogError on failure
+    - Background service continues running even if midnight reset fails
+
+1c. Pages/CallPanel.cshtml.cs
+    - Wrapped OnPost DB operations in try-catch
+    - On failure: logs error, shows "A system error occurred" to user, returns form instead of 500
+    - Same for OnPostCNA handler (logs error, redirects back)
+
+1d. Pages/Display.cshtml.cs
+    - Added ILogger<DisplayModel> injection
+    - Wrapped DB fallback queries in try-catch
+    - On failure: logs error, shows empty dash state instead of crash
+
+1e. Pages/Error.cshtml
+    - Redesigned with LiteQMS branding (card layout, Inter font, error icon)
+    - Removed "Development Mode" section
+    - Added "Return Home" button
+    - Standalone page (no layout dependency)
+
+1f. Program.cs
+    - Moved UseExceptionHandler("/Error") outside the if (!IsDevelopment) guard
+    - Error page works in all environments now
+
+1g. Hubs/QueueHub.cs
+    - Added ILogger<QueueHub> injection
+    - Wrapped CallPatient DB operations in try-catch
+    - Returns CallResult(false, "System error", 0) to client instead of throwing
+
+============================================================
+ITEM 2 — Input Validation Hardening
+============================================================
+
+Goal: Prevent malformed input, XSS attempts, and anti-forgery token errors.
+
+Changes:
+
+2a. Pages/Index.cshtml.cs
+    - Added RoomNumber.Trim() before validation
+    - Added character whitelist: only letters, digits, spaces, hyphens, slashes
+    - Added max length check (50 chars)
+    - Rejects input like "<script>", "../../", garbage with clear error message
+
+2b. Hubs/QueueHub.cs
+    - Added same room number validation in CallPatient hub method
+    - Protects against rogue SignalR clients
+
+2c. Pages/History.cshtml.cs
+    - Added date range clamping: if from > to, clamp from to to
+    - Capped range to max 90 days to prevent huge DB scans
+    - Combined into single WHERE clause
+
+2d. Moved CNA toggle from form POST to SignalR invoke
+    - Before: CNA forms were generated as raw HTML in JS, POSTed to /CallPanel?handler=CNA
+    - Problem: Dynamic forms lacked anti-forgery token → would get 400 errors in production
+    - Fix: CNA now works through connection.invoke("ToggleCNA", id) — same as recall
+
+    Files changed:
+    2d-i. Hubs/QueueHub.cs — added ToggleCNA(int callRecordId) hub method
+    2d-ii. Pages/CallPanel.cshtml.cs — removed OnPostCNA handler entirely
+    2d-iii. Pages/CallPanel.cshtml — replaced CNA <form> with plain <button data-cna-id="...">
+    2d-iv. wwwroot/js/call-panel-client.js — 3 changes:
+        - renderRecentCalls(): replaced form HTML with button
+        - CNAUpdated handler: item.querySelector("button") -> item.querySelector(".cna-btn")
+        - Global click handler: added .cna-btn case calling connection.invoke("ToggleCNA", id)
+
+============================================================
+ITEM 3 — Database & Query Hardening
+============================================================
+
+Goal: Reduce memory overhead, speed up queries, prevent timeouts.
+
+Changes:
+
+3a. Added AsNoTracking() to all read-only queries (4 files):
+    - Pages/History.cshtml.cs — history query
+    - Pages/CallPanel.cshtml.cs — todayCalls query in OnPost + LoadRecentCalls
+    - Pages/Display.cshtml.cs — all 3 DB fallback queries (latest, recentCalls, callCount)
+
+3b. Program.cs
+    - Added CommandTimeout(30) to SQLite connection
+    - Prevents queries from hanging indefinitely on locked DB file
+    - Note: EnableRetryOnFailure not available for SQLite (SQL Server only)
+
+3c. Data/AppDbContext.cs
+    - Added composite index on (RoomNumber, Timestamp)
+    - Speeds up LoadRecentCalls and History queries that filter by room + date
+
+============================================================
+ITEM 4 — Thread Safety Audit
+============================================================
+
+Goal: Ensure _currentState is never read/written simultaneously by different threads.
+
+Changes (all in Services/QueueStateService.cs):
+
+4a. CurrentState getter — now wrapped in lock
+4b. UpdateState() — now wrapped in lock
+4c. OnTimerElapsed — _currentState = next moved inside existing lock block
+4d. ResetStateAsync() — _currentState = null moved inside existing lock block
+
+Before: _currentState was accessed outside the lock in 4 places.
+After: All 4 places now use the same lock.
+
+============================================================
+ITEM 5a — Production: Remove CDN Dependencies
+============================================================
+
+Goal: App works completely offline — no internet required for any page.
+
+Changes:
+
+5a-i. Downloaded SignalR JS to wwwroot/lib/signalr/dist/browser/signalr.min.js
+    - Source: @microsoft/signalr@8 from npm/CDN
+    - Size: ~47KB minified
+
+5a-ii. Pages/Index.cshtml — bootstrap CSS + JS URLs changed to ~/lib/bootstrap/...
+5a-iii. Pages/CallPanel.cshtml — bootstrap CSS, bootstrap JS, signalr JS → local
+5a-iv. Pages/Display.cshtml — signalr JS → local
+5a-v. Pages/History.cshtml — bootstrap CSS + JS → local
+
+Result: 0 CDN references remaining across all pages. All assets served from wwwroot/lib/.
+
+============================================================
+FILES CHANGED
+============================================================
+
+Services/QueueStateService.cs         — Error handling + thread safety
+Services/MidnightResetService.cs      — Error handling
+Pages/CallPanel.cshtml.cs            — Error handling, removed OnPostCNA, AsNoTracking
+Pages/Display.cshtml.cs              — Error handling, AsNoTracking
+Pages/Index.cshtml.cs                — Room number validation
+Pages/History.cshtml.cs              — Date range clamping, AsNoTracking
+Pages/Error.cshtml                   — Redesigned with branding
+Pages/CallPanel.cshtml               — CNA form -> button, CDN -> local
+Pages/Index.cshtml                   — CDN -> local
+Pages/Display.cshtml                 — CDN -> local
+Pages/History.cshtml                 — CDN -> local
+Program.cs                           — Exception handler, CommandTimeout
+Data/AppDbContext.cs                 — Composite index
+Hubs/QueueHub.cs                     — Error handling, room validation, ToggleCNA
+wwwroot/js/call-panel-client.js      — CNA via SignalR, button selector fix
+wwwroot/lib/signalr/dist/browser/signalr.min.js  — NEW (downloaded)
+
+============================================================
+DISCUSSED — NOT IMPLEMENTED (Carry forward to next session)
+============================================================
+
+The following items for Stage 5 were discussed and decided but NOT implemented:
+
+Item 5b — Startup/launch approach (Discussed but deferred)
+    - Decided against .bat file
+    - Will use self-contained .exe with auto-open browser
+    - Desktop shortcut from installer is the "launcher"
+
+Item 5c — Tray icon (Discussed but deferred)
+    - WinExe + NotifyIcon for system tray
+    - Right-click menu: "Open LiteQMS" → browser / "Quit" → stop server
+    - Prevents users from spamming the shortcut (visual cue the app is running)
+
+Item 5d — In-app update checking (Discussed but deferred)
+    - /Updates page fetches latest GitHub release via API
+    - Compares against local version, shows download link if newer
+    - Footer with "Check for updates" on staff pages only (not Display)
+
+Item 5e — Installer (Discussed but deferred)
+    - Inno Setup script (setup.iss) produces LiteQMS-Setup.exe
+    - Install to Program Files, DB stored in %LOCALAPPDATA% (safe across upgrades)
+    - Desktop shortcut + Start Menu + Add/Remove Programs entry
+
+Item 5f — publish.bat (Discussed but deferred)
+    - One-line script: dotnet publish -c Release -r win-x64 --self-contained true
+
+============================================================
+HOW TO RUN
+============================================================
+
+dotnet run --urls "http://localhost:5000"
+
+Pages:
+  Room setup:    http://localhost:5000/
+  Call panel:    http://localhost:5000/CallPanel
+  TV display:    http://localhost:5000/Display
+  History:       http://localhost:5000/History
+
+============================================================
+FILES CHANGED THIS SESSION (Committed)
+============================================================
+
+Modified (16):
+  Data/AppDbContext.cs
+  Hubs/QueueHub.cs
+  Pages/CallPanel.cshtml
+  Pages/CallPanel.cshtml.cs
+  Pages/Display.cshtml
+  Pages/Display.cshtml.cs
+  Pages/Error.cshtml
+  Pages/History.cshtml
+  Pages/History.cshtml.cs
+  Pages/Index.cshtml
+  Pages/Index.cshtml.cs
+  Pages/DEVELOPMENT_SUMMARY.md
+  Program.cs
+  Services/MidnightResetService.cs
+  Services/QueueStateService.cs
+  wwwroot/js/call-panel-client.js
+
+New (2):
+  session-23-may-2026.txt
+  wwwroot/lib/signalr/dist/browser/signalr.min.js

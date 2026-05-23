@@ -24,30 +24,27 @@ public class HistoryModel : PageModel
 
     public async Task OnGet()
     {
-        var query = _db.CallRecords.AsQueryable();
+        var query = _db.CallRecords.AsNoTracking();
 
-        if (!string.IsNullOrEmpty(DateFrom) && DateTime.TryParse(DateFrom, out var from))
-        {
-            query = query.Where(r => r.Timestamp >= from);
-        }
+        var from = DateTime.Today;
+        var to = DateTime.Today;
 
-        if (!string.IsNullOrEmpty(DateTo) && DateTime.TryParse(DateTo, out var to))
-        {
-            query = query.Where(r => r.Timestamp <= to.AddDays(1).AddTicks(-1));
-        }
+        if (!string.IsNullOrEmpty(DateFrom)) DateTime.TryParse(DateFrom, out from);
+        if (!string.IsNullOrEmpty(DateTo)) DateTime.TryParse(DateTo, out to);
+
+        if (from > to) from = to;
+
+        var maxFrom = to.AddDays(-90);
+        if (from < maxFrom) from = maxFrom;
+
+        query = query.Where(r => r.Timestamp >= from && r.Timestamp <= to.AddDays(1).AddTicks(-1));
 
         Records = await query
             .OrderByDescending(r => r.Timestamp)
             .Take(500)
             .ToListAsync();
 
-        if (string.IsNullOrEmpty(DateFrom))
-        {
-            DateFrom = DateTime.Today.ToString("yyyy-MM-dd");
-        }
-        if (string.IsNullOrEmpty(DateTo))
-        {
-            DateTo = DateTime.Today.ToString("yyyy-MM-dd");
-        }
+        DateFrom = from.ToString("yyyy-MM-dd");
+        DateTo = to.ToString("yyyy-MM-dd");
     }
 }
