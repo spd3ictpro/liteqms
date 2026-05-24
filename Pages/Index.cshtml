@@ -46,6 +46,16 @@
         .input-icon-wrapper .form-control {
             padding-left: 3rem;
         }
+        .network-banner {
+            margin-top: 1.5rem;
+            padding: 0.6rem 1rem;
+            background: var(--primary-bg, #f0fdfa);
+            border: 1px solid var(--primary, #0d9488);
+            border-radius: 0.5rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--primary-dark, #0f766e);
+        }
         .footer-text {
             position: fixed;
             bottom: 1.5rem;
@@ -92,6 +102,12 @@
                     </div>
                     <button type="submit" class="btn btn-primary btn-lg w-100">Proceed</button>
                 </form>
+                <div class="network-banner">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.3rem; vertical-align: -2px;">
+                        <circle cx="12" cy="12" r="10"/><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                    Other devices: <strong>@Model.HostnameUrl</strong>
+                </div>
             </div>
         </div>
     </div>

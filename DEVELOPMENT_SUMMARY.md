@@ -1,5 +1,5 @@
 # LiteQMS — Development Summary
-# Date: 23 May 2026
+# Date: 24 May 2026
 # Project Path: D:\Programs\liteqms
 
 ---
@@ -23,6 +23,7 @@ It runs locally on one PC, browser-based for all users. No authentication.
 - **Font:** Inter Variable (`wwwroot/fonts/Inter-Variable.ttf`) — no internet dependency
 - **SignalR JS:** Bundled locally at `wwwroot/lib/signalr/` — no internet dependency
 - **Session:** In-memory distributed cache, 8-hour idle timeout
+- **Network:** Binds to `0.0.0.0:5000` — accessible via hostname from any LAN device
 
 ---
 
@@ -299,6 +300,17 @@ Then open:
 - [x] Display page (standalone, no layout) — unaffected
 - [x] Assembly version: `1.0.0` from `.csproj`
 
+### Network & LAN Access (24 May 2026)
+- [x] `appsettings.json` binds to `0.0.0.0:5000` — accessible from any LAN device
+- [x] Hostname URL displayed on Index page banner + tray tooltip + startup log
+- [x] No console window (`WinExe`) — silent background operation
+- [x] Removed `UseHttpsRedirection` — eliminates confusing HTTPS warning
+- [x] Custom `liteqms.ico` for tray icon, exe, installer, shortcuts
+- [x] Firewall rule auto-added during install (port 5000)
+- [x] Wi-Fi auto-switched from Public → Private during install
+- [x] Port auto-fallback: if 5000 taken, tries 5001, 5002, etc.
+- [x] All URLs dynamically reflect the actual port (tray, Index page, log)
+
 ---
 
 ## POTENTIAL FUTURE WORK
@@ -309,7 +321,4 @@ Then open:
 - [ ] Export history to CSV
 - [ ] Unit/integration tests
 - [ ] Pagination on History page for large datasets
-- [ ] In-app update checker (/Updates page with GitHub API)
-- [ ] System tray icon (WinExe + NotifyIcon)
-- [ ] Inno Setup installer (setup.iss + publish.bat)
-- [ ] Auto-open browser on startup
+

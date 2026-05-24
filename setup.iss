@@ -13,6 +13,7 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf}\{#MyAppName}
+SetupIconFile=.\liteqms.ico
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir=.\dist
@@ -37,7 +38,12 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingD
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; WorkingDir: "{app}"
 
 [Run]
+Filename: "powershell"; Parameters: "-Command ""Get-NetConnectionProfile | Where-Object NetworkCategory -EQ 'Public' | Set-NetConnectionProfile -NetworkCategory Private"""; Flags: runhidden
+Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""LiteQMS"" dir=in action=allow protocol=TCP localport=5000"; Flags: runhidden
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch LiteQMS"; Flags: postinstall nowait skipifsilent shellexec
+
+[UninstallRun]
+Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""LiteQMS"""; Flags: runhidden
 
 [UninstallDelete]
 ; Remove logs from app folder if any
