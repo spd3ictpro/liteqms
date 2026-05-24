@@ -95,9 +95,11 @@ It runs locally on one PC, browser-based for all users. No authentication.
 
 ```
 LiteQMS/
-├── Program.cs                          # App startup, DI, middleware, SignalR mapping
+├── Program.cs                          # App startup, DI, middleware, SignalR mapping, tray icon
 ├── appsettings.json                    # Connection string, logging config
-├── LiteQMS.csproj                      # Project file, NuGet packages
+├── LiteQMS.csproj                      # Project file, NuGet packages (UseWindowsForms)
+├── publish.bat                         # One-liner: dotnet publish self-contained
+├── setup.iss                           # Inno Setup 7 installer script
 ├── Data/
 │   ├── AppDbContext.cs                 # EF Core DbContext with indexes on Timestamp + (RoomNumber, Timestamp)
 │   └── CallRecord.cs                   # Entity: Id, RoomNumber, PatientNumber, Timestamp, IsCNA
@@ -111,6 +113,7 @@ LiteQMS/
 │   ├── CallPanel.cshtml / .cs          # Patient calling interface with live preview + SignalR CNA
 │   ├── Display.cshtml / .cs            # TV/public display page
 │   ├── History.cshtml / .cs            # Call history with date range filter (max 90 days)
+│   ├── Updates.cshtml / .cs            # Update checker with GitHub API (1h cache)
 │   ├── Error.cshtml / .cs              # User-friendly error page with branding
 │   ├── _ViewImports.cshtml             # Tag helpers, namespace imports
 │   └── _ViewStart.cshtml               # Default layout
@@ -260,6 +263,41 @@ Then open:
 - [x] Bootstrap 5 bundled locally (removed CDN dependency)
 - [x] SignalR JS v8 bundled locally (removed CDN dependency)
 - [x] Zero internet dependency for all pages
+
+### Stage 5b — Auto-open browser on startup (24 May 2026)
+- [x] `app.Run()` replaced with `StartAsync()` + `WaitForShutdownAsync()`
+- [x] Browser auto-opens to server URL in production (try-catch wrapped)
+- [x] Production DB path resolved to `%APPDATA%\LiteQMS\` (safe from Program Files)
+
+### Stage 5f — publish.bat (24 May 2026)
+- [x] One-liner: `dotnet publish -c Release -r win-x64 --self-contained true -o .\dist`
+
+### Stage 5e — Inno Setup installer (24 May 2026)
+- [x] `setup.iss` created for Inno Setup 7
+- [x] Installs to `{autopf}\LiteQMS`
+- [x] DB stored in `%APPDATA%\LiteQMS\LiteQMS.db` (preserved on reinstall/uninstall)
+- [x] Desktop + Start Menu shortcuts
+- [x] "Launch after install" option
+- [x] Uninstall: removes app files, leaves DB
+
+### Stage 5c — System tray icon (24 May 2026)
+- [x] Program.cs restructured to `[STAThread] Main` for WinForms
+- [x] NotifyIcon with "Open LiteQMS" / "Quit" right-click menu
+- [x] Double-click opens browser
+- [x] Balloon tip on startup: "LiteQMS — Server is running"
+- [x] Quit → graceful server shutdown via `app.StopAsync()`
+- [x] Falls back silently if tray unavailable (no GUI)
+- [x] Built-in icon used (custom .ico can be added later)
+
+### Stage 5d — In-app update checker (24 May 2026)
+- [x] `Pages/Updates.cshtml` + `Updates.cshtml.cs` created
+- [x] Fetches latest release from `api.github.com/repos/spd3ictpro/liteqms`
+- [x] 1-hour cache via `IMemoryCache` (respects GitHub rate limits)
+- [x] Three states: up-to-date, update available, check failed
+- [x] "Download" button pointing to GitHub releases page
+- [x] "Check for updates" link in shared `_Layout.cshtml` footer
+- [x] Display page (standalone, no layout) — unaffected
+- [x] Assembly version: `1.0.0` from `.csproj`
 
 ---
 
