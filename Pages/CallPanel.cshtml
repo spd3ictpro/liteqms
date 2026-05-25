@@ -263,6 +263,37 @@
         .recall-feedback-error {
             color: var(--danger);
         }
+
+        .mobile-numpad { display: none; }
+
+        @@media (max-width: 768px) {
+            .navbar { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+            .navbar .navbar-brand { font-size: 1.4rem; }
+            .navbar .room-badge { font-size: 0.8rem; padding: 0.3rem 0.75rem; }
+            .navbar .btn-outline-light { padding: 0.3rem 0.5rem; font-size: 0.8rem; }
+            .room-badge .sync-dot,
+            .room-badge #syncLabel { display: none; }
+            .container { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+            .call-patient-card .card-body { padding: 1rem !important; }
+            .form-label.fw-medium.mb-5 { margin-bottom: 0.75rem !important; }
+            .mb-5 { margin-bottom: 1rem !important; }
+            .row.g-4 { gap: 0.5rem !important; }
+            .hint-text { display: none; }
+            .digit-inputs { gap: 0.5rem; }
+            .digit-input { width: 4rem; height: 4.5rem; font-size: 2.2rem; }
+            .mobile-numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.75rem; }
+            .numpad-btn { height: 3.5rem; font-size: 1.5rem; font-weight: 700; border: 1px solid var(--border); border-radius: 0.75rem; background: var(--card-bg); color: var(--text-dark); cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; }
+            .numpad-btn:active { background: var(--primary-bg); }
+            .numpad-btn.clear { color: var(--danger); }
+            .numpad-btn svg { vertical-align: middle; }
+            .btn-lg { font-size: 1.1rem; padding: 0.75rem 1rem; }
+            .preview-number { font-size: 2.5rem; }
+            .preview-header { padding: 0.5rem 0.75rem; }
+            .preview-body { padding: 1rem 0.75rem; }
+            .recent-item .recall-btn,
+            .recent-item .cna-btn { padding: 0.4rem 0.75rem; font-size: 0.85rem; }
+            .preview-recall-btn { padding: 0.4rem 1rem; font-size: 0.8rem; }
+        }
     </style>
 </head>
 <body class="bg-light" data-room="@Model.RoomNumber">
@@ -326,6 +357,22 @@
                                 <div id="recallFeedback" class="text-center mt-2" style="display: none;">
                                     <span id="recallFeedbackText" class="fw-medium" style="font-size: 0.85rem;"></span>
                                 </div>
+                            </div>
+                            <div class="mobile-numpad" id="mobileNumpad">
+                                <button type="button" class="numpad-btn" data-digit="1">1</button>
+                                <button type="button" class="numpad-btn" data-digit="2">2</button>
+                                <button type="button" class="numpad-btn" data-digit="3">3</button>
+                                <button type="button" class="numpad-btn" data-digit="4">4</button>
+                                <button type="button" class="numpad-btn" data-digit="5">5</button>
+                                <button type="button" class="numpad-btn" data-digit="6">6</button>
+                                <button type="button" class="numpad-btn" data-digit="7">7</button>
+                                <button type="button" class="numpad-btn" data-digit="8">8</button>
+                                <button type="button" class="numpad-btn" data-digit="9">9</button>
+                                <button type="button" class="numpad-btn" data-action="backspace">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+                                </button>
+                                <button type="button" class="numpad-btn" data-digit="0">0</button>
+                                <button type="button" class="numpad-btn clear" data-action="clear">Clear</button>
                             </div>
                             <div class="d-flex gap-3">
                                 <button type="button" class="btn btn-outline-secondary btn-lg" id="clearBtn">
@@ -410,5 +457,61 @@
     <script src="~/lib/signalr/dist/browser/signalr.min.js"></script>
     <script src="~/js/theme.js" asp-append-version="true"></script>
     <script src="~/js/call-panel-client.js" asp-append-version="true"></script>
+    <script>
+        (function() {
+            var inputs = [
+                document.getElementById('digit1'),
+                document.getElementById('digit2'),
+                document.getElementById('digit3'),
+                document.getElementById('digit4')
+            ];
+            var numpad = document.getElementById('mobileNumpad');
+            if (!numpad) return;
+
+            if (window.innerWidth <= 768) {
+                inputs.forEach(function(i) { i.readOnly = true; });
+            }
+
+            numpad.addEventListener('click', function(e) {
+                var btn = e.target.closest('.numpad-btn');
+                if (!btn) return;
+
+                if (btn.dataset.action === 'clear') {
+                    inputs.forEach(function(i) { i.value = ''; });
+                    inputs[0].focus();
+                    if (inputs[0]) {
+                        var ev = new Event('input', { bubbles: true });
+                        inputs[0].dispatchEvent(ev);
+                    }
+                    return;
+                }
+
+                if (btn.dataset.action === 'backspace') {
+                    for (var i = 3; i >= 0; i--) {
+                        if (inputs[i].value) {
+                            inputs[i].value = '';
+                            inputs[i].focus();
+                            var ev = new Event('input', { bubbles: true });
+                            inputs[i].dispatchEvent(ev);
+                            break;
+                        }
+                    }
+                    return;
+                }
+
+                var digit = btn.dataset.digit;
+                if (digit !== undefined) {
+                    for (var i = 0; i < 4; i++) {
+                        if (!inputs[i].value) {
+                            inputs[i].value = digit;
+                            var ev = new Event('input', { bubbles: true });
+                            inputs[i].dispatchEvent(ev);
+                            break;
+                        }
+                    }
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

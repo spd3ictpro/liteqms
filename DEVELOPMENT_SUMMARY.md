@@ -38,14 +38,13 @@ It runs locally on one PC, browser-based for all users. No authentication.
 - **Auto-uppercase** — room number on Index page is uppercased client-side (JS) + server-side (`ToUpper()`)
 - **Autocomplete off** — room number input has `autocomplete="off"` to prevent browser suggestions
 - **Format validation** — patient number must be exactly 4 digits
-- **Midnight reset** — background service clears active display state at 00:00, deletes previous day's DB records
+- **Midnight reset** — background service clears active display state at 00:00, deletes records older than 365 days
 - **Auto-reconnect** — SignalR handles display page reconnection automatically
 
 ### Audio
-- Ding-dong sound on new call (`wwwroot/sounds/ding-dong.wav`)
+- Ding-dong sound on new call (`wwwroot/sounds/ding-dong.mp3`)
 - Browser requires user interaction (click) before audio can play
 - Audio overlay shown on display page until first click
-- Sound file is swappable — just replace the .wav file
 
 ---
 
@@ -92,6 +91,31 @@ It runs locally on one PC, browser-based for all users. No authentication.
 
 ---
 
+## MOBILE UI — CALL PANEL
+
+### Layout Optimizations (max-width: 768px)
+- Navbar: compacted padding, smaller brand/room-badge font; sync indicator hidden
+- Card padding: reduced from 3rem to 1rem; form label spacing tightened
+- Container padding: halved to save vertical space
+- Hint text: hidden (occupies space without adding value on phones)
+- Preview card: compacted header/body padding, number font reduced to 2.5rem
+
+### On-Screen Numpad
+- 3x4 grid layout positioned between digit inputs and action buttons:
+  ```
+  1  2  3
+  4  5  6
+  7  8  9
+  ⌫  0  Clear
+  ```
+- Digit inputs set to `readOnly` on mobile — phone keyboard never appears
+- Numpad tapping fills the first empty digit box and auto-advances focus
+- Backspace clears the last filled digit; Clear resets all four boxes
+- Triggers the same `input` events as keyboard input — validation and auto-advance work identically
+- Desktop CSS: `display: none` — numpad invisible on wide screens
+
+---
+
 ## FILE STRUCTURE
 
 ```
@@ -133,7 +157,7 @@ LiteQMS/
     ├── fonts/
     │   └── Inter-Variable.ttf          # Inter variable font (bundled locally)
     └── sounds/
-        └── ding-dong.wav               # Ding-dong sound (swappable)
+        └── ding-dong.mp3               # Ding-dong notification sound
 ```
 
 ---
@@ -164,7 +188,7 @@ LiteQMS/
 ### Database
 - SQLite, auto-created on startup via `db.Database.EnsureCreated()`
 - Table: `CallRecords` with index on `Timestamp`
-- Midnight reset deletes records from previous days (keeps only today's data)
+- Midnight reset deletes records older than 365 days (supports audit trail)
 
 ---
 
@@ -289,6 +313,15 @@ Then open:
 - [x] Quit → graceful server shutdown via `app.StopAsync()`
 - [x] Falls back silently if tray unavailable (no GUI)
 - [x] Built-in icon used (custom .ico can be added later)
+
+### Mobile & Retention (26 May 2026)
+- [x] Call records retained for 365 days (midnight cleanup threshold updated)
+- [x] QR code on Index page for one-tap mobile access (QRCoder NuGet)
+- [x] Notification sound changed from .wav to .mp3
+- [x] Mobile-responsive CallPanel layout with media query breakpoint at 768px
+- [x] On-screen numpad with backspace/clear (no phone keyboard needed)
+- [x] Digit inputs set read-only on mobile to suppress keyboard
+- [x] Tighter mobile spacing (padding, margins, hidden hint text)
 
 ### Stage 5d — In-app update checker (24 May 2026)
 - [x] `Pages/Updates.cshtml` + `Updates.cshtml.cs` created
