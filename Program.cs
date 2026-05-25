@@ -11,11 +11,13 @@ namespace LiteQMS;
 static class Program
 {
     [STAThread]
-    static async Task Main(string[] args)
+    static void Main(string[] args)
     {
+        ApplicationConfiguration.Initialize();
+
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddRazorPages();
+        builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
         builder.Services.AddSignalR();
         builder.Services.AddDistributedMemoryCache();
         builder.Services.AddSession(options =>
@@ -32,16 +34,12 @@ static class Program
             configuredPort = uri.Port;
         }
 
-        var actualPort = configuredPort;
-        if (!builder.Environment.IsDevelopment())
+        var actualPort = FindFreePort(configuredPort);
+        if (actualPort != configuredPort)
         {
-            actualPort = FindFreePort(configuredPort);
-            if (actualPort != configuredPort)
-            {
-                builder.Configuration["Urls"] = $"http://0.0.0.0:{actualPort}";
-            }
-            builder.Configuration["LiteQMS:Port"] = actualPort.ToString();
+            builder.Configuration["Urls"] = $"http://0.0.0.0:{actualPort}";
         }
+        builder.Configuration["LiteQMS:Port"] = actualPort.ToString();
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
             ?? "Data Source=LiteQMS.db";
@@ -62,6 +60,7 @@ static class Program
             }));
 
         builder.Services.AddSingleton<QueueStateService>();
+        builder.Services.AddScoped<CallService>();
         builder.Services.AddHostedService<MidnightResetService>();
 
         var app = builder.Build();
@@ -89,76 +88,68 @@ static class Program
 
         app.MapHub<QueueHub>("/queueHub");
 
-        await app.StartAsync();
+        app.Start();
 
-        if (!app.Environment.IsDevelopment())
+        var localUrl = $"http://localhost:{actualPort}";
+        var hostnameUrl = $"http://{Environment.MachineName}:{actualPort}";
+
+        var logPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "LiteQMS", "startup.log");
+        File.WriteAllText(logPath,
+            $"LiteQMS started at {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n" +
+            $"→ This PC:      {localUrl}\n" +
+            $"→ Other devices: {hostnameUrl}\n");
+
+        OpenBrowser(localUrl);
+
+        try
         {
-            var localUrl = $"http://localhost:{actualPort}";
-            var hostnameUrl = $"http://{Environment.MachineName}:{actualPort}";
-
-            var logPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "LiteQMS", "startup.log");
-            File.WriteAllText(logPath,
-                $"LiteQMS started at {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n" +
-                $"→ This PC:      {localUrl}\n" +
-                $"→ Other devices: {hostnameUrl}\n");
-
-            OpenBrowser(localUrl);
-
+            Icon trayIcon;
             try
             {
-                Icon trayIcon;
-                try
-                {
-                    trayIcon = new Icon("liteqms.ico");
-                }
-                catch
-                {
-                    trayIcon = SystemIcons.Application;
-                }
-
-                using var icon = new NotifyIcon
-                {
-                    Icon = trayIcon,
-                    Text = "LiteQMS — " + hostnameUrl,
-                    Visible = true
-                };
-
-                var menu = new ContextMenuStrip();
-                menu.Items.Add("Open LiteQMS", null, (_, _) => OpenBrowser(localUrl));
-                menu.Items.Add(new ToolStripSeparator());
-                menu.Items.Add("Quit", null, async (_, _) =>
-                {
-                    try
-                    {
-                        icon.Visible = false;
-                        await app.StopAsync();
-                    }
-                    catch
-                    {
-                        // Silent — shutdown is non-critical
-                    }
-                    Application.ExitThread();
-                });
-
-                icon.ContextMenuStrip = menu;
-                icon.DoubleClick += (_, _) => OpenBrowser(localUrl);
-                icon.BalloonTipText = $"Other devices: {hostnameUrl}";
-
-                icon.ShowBalloonTip(3000, "LiteQMS — Server is running", icon.BalloonTipText, ToolTipIcon.Info);
-
-                Application.Run();
+                trayIcon = new Icon("liteqms.ico");
             }
             catch
             {
-                // Tray not available (e.g. no GUI) — keep server running
-                await app.WaitForShutdownAsync();
+                trayIcon = SystemIcons.Application;
             }
+
+            using var icon = new NotifyIcon
+            {
+                Icon = trayIcon,
+                Text = "LiteQMS — " + hostnameUrl,
+                Visible = true
+            };
+
+            var menu = new ContextMenuStrip();
+            menu.Items.Add("Open LiteQMS", null, (_, _) => OpenBrowser(localUrl));
+            menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add("Quit", null, (_, _) =>
+            {
+                try
+                {
+                    icon.Visible = false;
+                    app.StopAsync().GetAwaiter().GetResult();
+                }
+                catch
+                {
+                    // Silent
+                }
+                Application.ExitThread();
+            });
+
+            icon.ContextMenuStrip = menu;
+            icon.DoubleClick += (_, _) => OpenBrowser(localUrl);
+            icon.BalloonTipText = $"Other devices: {hostnameUrl}";
+
+            icon.ShowBalloonTip(3000, "LiteQMS — Server is running", icon.BalloonTipText, ToolTipIcon.Info);
+
+            Application.Run();
         }
-        else
+        catch
         {
-            await app.WaitForShutdownAsync();
+            app.WaitForShutdown();
         }
     }
 
@@ -185,7 +176,7 @@ static class Program
         }
         catch
         {
-            // Silent — browser launch is non-critical
+            // Silent
         }
     }
 }

@@ -1,9 +1,8 @@
 using LiteQMS.Data;
-using LiteQMS.Hubs;
+using LiteQMS.Models;
 using LiteQMS.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace LiteQMS.Pages;
@@ -12,14 +11,14 @@ public class CallPanelModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly QueueStateService _queueState;
-    private readonly IHubContext<QueueHub> _hubContext;
+    private readonly CallService _callService;
     private readonly ILogger<CallPanelModel> _logger;
 
-    public CallPanelModel(AppDbContext db, QueueStateService queueState, IHubContext<QueueHub> hubContext, ILogger<CallPanelModel> logger)
+    public CallPanelModel(AppDbContext db, QueueStateService queueState, CallService callService, ILogger<CallPanelModel> logger)
     {
         _db = db;
         _queueState = queueState;
-        _hubContext = hubContext;
+        _callService = callService;
         _logger = logger;
     }
 
@@ -80,59 +79,17 @@ public class CallPanelModel : PageModel
             return Page();
         }
 
-        try
+        var result = await _callService.CallPatientAsync(PatientNumber, RoomNumber);
+
+        if (result.Success)
         {
-            var today = DateTime.Today;
-            var todayCalls = await _db.CallRecords
-                .AsNoTracking()
-                .Where(r => r.Timestamp >= today)
-                .ToListAsync();
-
-            CallCount = todayCalls.Count(r => r.PatientNumber == PatientNumber && !r.IsCNA);
-
-            var callRecord = new CallRecord
-            {
-                RoomNumber = RoomNumber,
-                PatientNumber = PatientNumber,
-                Timestamp = DateTime.Now,
-                IsCNA = false
-            };
-
-            _db.CallRecords.Add(callRecord);
-            await _db.SaveChangesAsync();
-
-            var currentState = _queueState.CurrentState;
-            var isSameAsCurrent = currentState != null && currentState.PatientNumber == PatientNumber;
-            var isRecall = CallCount > 0;
-
-            if (!isSameAsCurrent || isRecall)
-            {
-                var recentCalls = todayCalls
-                    .Where(r => r.PatientNumber != PatientNumber)
-                    .OrderByDescending(r => r.Timestamp)
-                    .Take(4)
-                    .Select(r => new RecentCall(r.Id, r.RoomNumber, r.PatientNumber, r.Timestamp, r.IsCNA))
-                    .ToList();
-
-                var state = new CallState(RoomNumber, PatientNumber, callRecord.Timestamp, recentCalls, CallCount + 1, isRecall);
-                await _queueState.BroadcastStateAsync(state);
-
-                _logger.LogInformation("Patient {PatientNumber} called from {RoomNumber} (display updated)", PatientNumber, RoomNumber);
-            }
-            else
-            {
-                _logger.LogInformation("Patient {PatientNumber} called from {RoomNumber} (same as current, display unchanged)", PatientNumber, RoomNumber);
-            }
-
+            CallCount = result.CallCount;
             return RedirectToPage();
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to call patient {PatientNumber} from {RoomNumber}", PatientNumber, RoomNumber);
-            ModelState.AddModelError(string.Empty, "A system error occurred. Please try again.");
-            LoadRecentCalls();
-            return Page();
-        }
+
+        ModelState.AddModelError(string.Empty, result.Error);
+        LoadRecentCalls();
+        return Page();
     }
 
     private void LoadRecentCalls()

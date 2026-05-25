@@ -22,6 +22,8 @@ public class MidnightResetService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await PerformResetAsync(stoppingToken);
+
         while (!stoppingToken.IsCancellationRequested)
         {
             var now = DateTime.Now;
@@ -40,26 +42,31 @@ public class MidnightResetService : BackgroundService
                 break;
             }
 
-            _logger.LogInformation("Performing midnight queue reset");
+            await PerformResetAsync(stoppingToken);
+        }
+    }
 
-            try
-            {
-                await _queueState.ResetStateAsync();
+    private async Task PerformResetAsync(CancellationToken stoppingToken)
+    {
+        _logger.LogInformation("Performing queue reset and cleanup");
 
-                using var scope = _serviceProvider.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        try
+        {
+            await _queueState.ResetStateAsync();
 
-                var yesterday = DateTime.Now.Date;
-                var deleted = await db.CallRecords
-                    .Where(r => r.Timestamp < yesterday)
-                    .ExecuteDeleteAsync(stoppingToken);
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                _logger.LogInformation("Midnight reset completed — deleted {Count} old records", deleted);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Midnight reset failed");
-            }
+            var yesterday = DateTime.Now.Date;
+            var deleted = await db.CallRecords
+                .Where(r => r.Timestamp < yesterday)
+                .ExecuteDeleteAsync(stoppingToken);
+
+            _logger.LogInformation("Reset completed — deleted {Count} old records", deleted);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Reset failed");
         }
     }
 }
