@@ -49,9 +49,9 @@ public class MidnightResetService : BackgroundService
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                var yesterday = DateTime.Now.Date;
+                var cutoff = DateTime.Now.Date.AddDays(-365);
                 var deleted = await db.CallRecords
-                    .Where(r => r.Timestamp < yesterday)
+                    .Where(r => r.Timestamp < cutoff)
                     .ExecuteDeleteAsync(stoppingToken);
 
                 _logger.LogInformation("Midnight reset completed — deleted {Count} old records", deleted);

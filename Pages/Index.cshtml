@@ -108,6 +108,12 @@
                     </svg>
                     Other devices: <strong>@Model.HostnameUrl</strong>
                 </div>
+                <div class="text-center mt-3">
+                    <img src="data:image/png;base64,@Model.QrCodeBase64"
+                         alt="QR Code for @Model.HostnameUrl"
+                         style="width: 160px; height: 160px; border-radius: 8px;" />
+                    <p class="text-muted small mt-2 mb-0">Scan to open on your phone</p>
+                </div>
             </div>
         </div>
     </div>
