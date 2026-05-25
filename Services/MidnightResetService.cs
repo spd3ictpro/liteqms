@@ -22,8 +22,6 @@ public class MidnightResetService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await PerformResetAsync(stoppingToken);
-
         while (!stoppingToken.IsCancellationRequested)
         {
             var now = DateTime.Now;
@@ -42,31 +40,26 @@ public class MidnightResetService : BackgroundService
                 break;
             }
 
-            await PerformResetAsync(stoppingToken);
-        }
-    }
+            _logger.LogInformation("Performing midnight queue reset");
 
-    private async Task PerformResetAsync(CancellationToken stoppingToken)
-    {
-        _logger.LogInformation("Performing queue reset and cleanup");
+            try
+            {
+                await _queueState.ResetStateAsync();
 
-        try
-        {
-            await _queueState.ResetStateAsync();
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var yesterday = DateTime.Now.Date;
+                var deleted = await db.CallRecords
+                    .Where(r => r.Timestamp < yesterday)
+                    .ExecuteDeleteAsync(stoppingToken);
 
-            var yesterday = DateTime.Now.Date;
-            var deleted = await db.CallRecords
-                .Where(r => r.Timestamp < yesterday)
-                .ExecuteDeleteAsync(stoppingToken);
-
-            _logger.LogInformation("Reset completed — deleted {Count} old records", deleted);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Reset failed");
+                _logger.LogInformation("Midnight reset completed — deleted {Count} old records", deleted);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Midnight reset failed");
+            }
         }
     }
 }

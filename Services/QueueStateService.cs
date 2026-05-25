@@ -1,5 +1,4 @@
 using LiteQMS.Hubs;
-using LiteQMS.Models;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 
@@ -48,7 +47,7 @@ public class QueueStateService
         {
             if (_displayTimer != null)
             {
-                if (_currentState != null && state.PatientNumber == _currentState.PatientNumber && !state.IsRecall)
+                if (_currentState != null && state.PatientNumber == _currentState.PatientNumber)
                     return;
 
                 _pendingQueue.Enqueue(state);

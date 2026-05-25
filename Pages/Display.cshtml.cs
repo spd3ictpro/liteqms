@@ -1,5 +1,5 @@
 using LiteQMS.Data;
-using LiteQMS.Models;
+using LiteQMS.Hubs;
 using LiteQMS.Services;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -45,7 +45,7 @@ public class DisplayModel : PageModel
                         .AsNoTracking()
                         .Where(r => r.Timestamp >= today && r.Id != latest.Id)
                         .OrderByDescending(r => r.Timestamp)
-                        .Take(4)
+                        .Take(5)
                         .Select(r => new RecentCall(r.Id, r.RoomNumber, r.PatientNumber, r.Timestamp, r.IsCNA))
                         .ToListAsync();
 
