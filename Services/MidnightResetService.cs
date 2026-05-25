@@ -57,12 +57,12 @@ public class MidnightResetService : BackgroundService
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            var cutoff = DateTime.Now.Date.AddDays(-120);
+            var yesterday = DateTime.Now.Date;
             var deleted = await db.CallRecords
-                .Where(r => r.Timestamp < cutoff)
+                .Where(r => r.Timestamp < yesterday)
                 .ExecuteDeleteAsync(stoppingToken);
 
-            _logger.LogInformation("Reset completed — deleted {Count} records older than 120 days", deleted);
+            _logger.LogInformation("Reset completed — deleted {Count} old records", deleted);
         }
         catch (Exception ex)
         {
