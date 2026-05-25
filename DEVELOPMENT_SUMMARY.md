@@ -22,7 +22,7 @@ It runs locally on one PC, browser-based for all users. No authentication.
 - **Styling:** Bootstrap 5 (bundled locally at `wwwroot/lib/bootstrap/`)
 - **Font:** Inter Variable (`wwwroot/fonts/Inter-Variable.ttf`) — no internet dependency
 - **SignalR JS:** Bundled locally at `wwwroot/lib/signalr/` — no internet dependency
-- **Session:** In-memory distributed cache, 8-hour idle timeout
+- **Session:** In-me  ry distributed cache, 8-hour idle timeout
 - **Network:** Binds to `0.0.0.0:5000` — accessible via hostname from any LAN device
 
 ---
@@ -251,7 +251,7 @@ Then open:
 - [x] Patient number format validation (exactly 4 digits)
 - [x] Recall detection and duplicate call count display
 - [x] CNA toggle (marks DB only, display unaffected)
-- [x] Midnight reset background service (clears display, deletes yesterday's records)
+- [x] Midnight reset background service (clears display, deletes records older than 365 days)
 - [x] 3 color themes (teal, medical blue, dark) with localStorage persistence
 - [x] Inter font bundled locally (no internet dependency)
 - [x] Display page: light teal background, split layout (70/30), large typography
@@ -354,4 +354,3 @@ Then open:
 - [ ] Export history to CSV
 - [ ] Unit/integration tests
 - [ ] Pagination on History page for large datasets
-
