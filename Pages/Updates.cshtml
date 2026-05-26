@@ -2,149 +2,194 @@
 @model UpdatesModel
 @{
     ViewData["Title"] = "Check for Updates";
+    Layout = null;
 }
-<style>
-    .updates-card {
-        max-width: 600px;
-        margin: 2rem auto;
-        border-radius: 1rem;
-        overflow: hidden;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-    }
-    .updates-card .card-header {
-        background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-        color: white;
-        font-weight: 700;
-        font-size: 1.2rem;
-        padding: 1.25rem 1.5rem;
-    }
-    .updates-card .card-body {
-        padding: 2rem 1.5rem;
-    }
-    .version-badge {
-        display: inline-block;
-        padding: 0.35rem 1rem;
-        border-radius: 2rem;
-        font-weight: 600;
-        font-size: 1rem;
-    }
-    .version-current {
-        background: #e0f2fe;
-        color: #0369a1;
-    }
-    .version-latest {
-        background: #dcfce7;
-        color: #15803d;
-    }
-    .version-latest-new {
-        background: #fef3c7;
-        color: #92400e;
-    }
-    .status-icon {
-        width: 64px;
-        height: 64px;
-        margin-bottom: 0.5rem;
-    }
-    .error-state {
-        color: var(--text-muted);
-    }
-    .error-state a {
-        color: var(--primary);
-    }
-</style>
-
-<div class="container py-4">
-    <div class="updates-card card">
-        <div class="card-header">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: -3px;">
-                <polyline points="23 4 23 10 17 10"/>
-                <polyline points="1 20 1 14 7 14"/>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-            </svg>
-            Check for Updates
-        </div>
-        <div class="card-body text-center">
-
-            <div class="mb-4">
-                <span class="version-badge version-current">
-                    Current version: v@(Model.CurrentVersion)
-                </span>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — LiteQMS</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        .navbar {
+            background: linear-gradient(135deg, var(--navbar-bg), var(--navbar-bg-end)) !important;
+        }
+        .updates-card {
+            max-width: 600px;
+            margin: 2rem auto;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+        .updates-card .card-header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            padding: 1.25rem 1.5rem;
+        }
+        .updates-card .card-body {
+            padding: 2rem 1.5rem;
+        }
+        .version-badge {
+            display: inline-block;
+            padding: 0.35rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .version-current {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+        .version-latest {
+            background: #dcfce7;
+            color: #15803d;
+        }
+        .version-latest-new {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status-icon {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 0.5rem;
+        }
+        .error-state {
+            color: var(--text-muted);
+        }
+        .error-state a {
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1 fw-bold">LiteQMS — Check for Updates</span>
+            <div class="d-flex align-items-center gap-2">
+                <div class="dropdown theme-dropdown">
+                    <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Change theme">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><button class="dropdown-item theme-btn active" data-theme="teal"><span class="theme-indicator teal"></span>Teal</button></li>
+                        <li><button class="dropdown-item theme-btn" data-theme="blue"><span class="theme-indicator blue"></span>Medical Blue</button></li>
+                        <li><button class="dropdown-item theme-btn" data-theme="dark"><span class="theme-indicator dark"></span>Dark</button></li>
+                    </ul>
+                </div>
+                <a href="/CallPanel" class="btn btn-outline-light">Call Panel</a>
+                <a href="/Display" class="btn btn-outline-light" target="_blank">Display</a>
+                <a href="/History" class="btn btn-outline-light">History</a>
             </div>
-
-            @if (Model.CheckFailed)
-            {
-                <div class="error-state">
-                    <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="12"/>
-                        <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    <p class="fs-5 fw-semibold">Unable to check for updates</p>
-                    <p class="text-muted">Could not reach GitHub. Check your internet connection.</p>
-                    <a href="/Updates" class="btn btn-outline-primary">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem; vertical-align: -2px;">
-                            <polyline points="23 4 23 10 17 10"/>
-                            <polyline points="1 20 1 14 7 14"/>
-                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                        </svg>
-                        Try Again
-                    </a>
-                </div>
-            }
-            else if (Model.IsUpdateAvailable)
-            {
-                <div>
-                    <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="16" x2="12" y2="12"/>
-                        <line x1="12" y1="8" x2="12.01" y2="8"/>
-                    </svg>
-                    <p class="fs-4 fw-bold" style="color: #92400e;">Update Available</p>
-                    <div class="mb-3">
-                        <span class="version-badge version-latest-new">
-                            Latest: v@(Model.LatestVersion)
-                        </span>
-                    </div>
-                    <p class="text-muted">A new version of LiteQMS is available for download.</p>
-                    <a href="@Model.DownloadUrl" target="_blank" class="btn btn-primary btn-lg">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.4rem; vertical-align: -3px;">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                            <polyline points="7 10 12 15 17 10"/>
-                            <line x1="12" y1="15" x2="12" y2="3"/>
-                        </svg>
-                        Download v@(Model.LatestVersion)
-                    </a>
-                </div>
-            }
-            else if (Model.LatestVersion is not null)
-            {
-                <div>
-                    <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
-                    <p class="fs-4 fw-bold" style="color: #15803d;">You're up to date!</p>
-                    <div class="mb-3">
-                        <span class="version-badge version-latest">
-                            Latest: v@(Model.LatestVersion)
-                        </span>
-                    </div>
-                    <p class="text-muted">LiteQMS v@(Model.CurrentVersion) is the latest version.</p>
-                </div>
-            }
-            else
-            {
-                <div class="d-flex justify-content-center py-4">
-                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="visually-hidden">Checking for updates...</span>
-                    </div>
-                </div>
-                <p class="text-muted">Checking for updates...</p>
-            }
-
         </div>
-        <div class="card-footer text-muted text-center small py-2">
-            <a href="https://github.com/spd3ictpro/liteqms/releases" target="_blank">View all releases</a>
+    </nav>
+
+    <div class="container py-4">
+        <div class="updates-card card">
+            <div class="card-header">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: -3px;">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                Check for Updates
+            </div>
+            <div class="card-body text-center">
+
+                <div class="mb-4">
+                    <span class="version-badge version-current">
+                        Current version: v@(Model.CurrentVersion)
+                    </span>
+                </div>
+
+                @if (Model.CheckFailed)
+                {
+                    <div class="error-state">
+                        <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        <p class="fs-5 fw-semibold">Unable to check for updates</p>
+                        <p class="text-muted">Could not reach GitHub. Check your internet connection.</p>
+                        <a href="/Updates" class="btn btn-outline-primary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem; vertical-align: -2px;">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <polyline points="1 20 1 14 7 14"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                            Try Again
+                        </a>
+                    </div>
+                }
+                else if (Model.HasNoRelease)
+                {
+                    <div>
+                        <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="16" x2="12" y2="12"/>
+                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        <p class="fs-4 fw-bold" style="color: #92400e;">No updates published yet</p>
+                        <p class="text-muted">Check back later for new releases.</p>
+                        <a href="https://github.com/spd3ictpro/liteqms/releases" target="_blank" class="btn btn-outline-primary">
+                            View releases on GitHub
+                        </a>
+                    </div>
+                }
+                else if (Model.IsUpdateAvailable)
+                {
+                    <div>
+                        <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="16" x2="12" y2="12"/>
+                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        <p class="fs-4 fw-bold" style="color: #92400e;">Update Available</p>
+                        <div class="mb-3">
+                            <span class="version-badge version-latest-new">
+                                Latest: v@(Model.LatestVersion)
+                            </span>
+                        </div>
+                        <p class="text-muted">A new version of LiteQMS is available for download.</p>
+                        <a href="@Model.DownloadUrl" target="_blank" class="btn btn-primary btn-lg">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.4rem; vertical-align: -3px;">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Download v@(Model.LatestVersion)
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        <p class="fs-4 fw-bold" style="color: #15803d;">You're up to date!</p>
+                        <div class="mb-3">
+                            <span class="version-badge version-latest">
+                                Latest: v@(Model.LatestVersion)
+                            </span>
+                        </div>
+                        <p class="text-muted">LiteQMS v@(Model.CurrentVersion) is the latest version.</p>
+                    </div>
+                }
+
+            </div>
+            <div class="card-footer text-muted text-center small py-2">
+                <a href="https://github.com/spd3ictpro/liteqms/releases" target="_blank">View all releases</a>
+            </div>
         </div>
     </div>
-</div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/theme.js" asp-append-version="true"></script>
+</body>
+</html>

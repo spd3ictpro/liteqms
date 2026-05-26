@@ -346,11 +346,10 @@ Then open:
 
 ---
 
-## POTENTIAL FUTURE WORK
 
-- [ ] Sound settings page (volume, custom sound upload)
-- [ ] Multi-display support (different displays for different rooms)
-- [ ] Queue management features (skip, reorder)
-- [ ] Export history to CSV
-- [ ] Unit/integration tests
-- [ ] Pagination on History page for large datasets
+Here's the workflow for iterating:
+1. Edit code — make your changes in the source files (Pages/, Services/, Data/, Hubs/, etc.)
+2. Test — run dotnet build to check for compile errors, then .\dist\LiteQMS.exe to test live
+3. Publish — run .\publish.bat to regenerate dist\
+4. Installer — run iscc setup.iss to repack dist\LiteQMS-Setup.exe
+Basically: code → build → test → publish → package. Rinse and repeat.

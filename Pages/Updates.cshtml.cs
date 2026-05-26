@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json.Serialization;
@@ -25,12 +26,10 @@ public class UpdatesModel : PageModel
     public string? DownloadUrl { get; set; }
     public bool IsUpdateAvailable { get; set; }
     public bool CheckFailed { get; set; }
-    public bool IsDevelopment { get; set; }
+    public bool HasNoRelease { get; set; }
 
     public async Task OnGet()
     {
-        IsDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
-
         var cacheKey = "GitHubLatestRelease";
 
         if (_cache.TryGetValue(cacheKey, out GitHubRelease? release) && release is not null)
@@ -43,18 +42,35 @@ public class UpdatesModel : PageModel
         {
             _http.DefaultRequestHeaders.UserAgent.TryParseAdd("LiteQMS/1.0");
 
-            release = await _http.GetFromJsonAsync<GitHubRelease>(
+            var response = await _http.GetAsync(
                 "https://api.github.com/repos/spd3ictpro/liteqms/releases/latest");
 
-            if (release is not null)
+            if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                _cache.Set(cacheKey, release, TimeSpan.FromHours(1));
-                ApplyRelease(release);
+                HasNoRelease = true;
+            }
+            else if (response.IsSuccessStatusCode)
+            {
+                release = await response.Content.ReadFromJsonAsync<GitHubRelease>();
+
+                if (release?.TagName is not null)
+                {
+                    _cache.Set(cacheKey, release, TimeSpan.FromHours(1));
+                    ApplyRelease(release);
+                }
+                else
+                {
+                    HasNoRelease = true;
+                }
             }
             else
             {
                 CheckFailed = true;
             }
+        }
+        catch (TaskCanceledException)
+        {
+            CheckFailed = true;
         }
         catch
         {
