@@ -40,10 +40,12 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 [Run]
 Filename: "powershell"; Parameters: "-Command ""Get-NetConnectionProfile | Where-Object NetworkCategory -EQ 'Public' | Set-NetConnectionProfile -NetworkCategory Private"""; Flags: runhidden
 Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""LiteQMS"" dir=in action=allow protocol=TCP localport=5000"; Flags: runhidden
+Filename: "netsh"; Parameters: "http add urlacl url=http://+:5000/ user=BUILTIN\Users"; Flags: runhidden
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch LiteQMS"; Flags: postinstall nowait skipifsilent shellexec
 
 [UninstallRun]
 Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""LiteQMS"""; Flags: runhidden
+Filename: "netsh"; Parameters: "http delete urlacl url=http://+:5000/"; Flags: runhidden
 
 [UninstallDelete]
 ; Remove logs from app folder if any

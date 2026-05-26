@@ -108,6 +108,10 @@ static class Program
 
             try
             {
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.SetHighDpiMode(HighDpiMode.SystemAware);
+
                 Icon trayIcon;
                 try
                 {
@@ -150,9 +154,9 @@ static class Program
 
                 Application.Run();
             }
-            catch
+            catch (Exception ex)
             {
-                // Tray not available (e.g. no GUI) — keep server running
+                File.AppendAllText(logPath, $"Tray icon failed: {ex.Message}\n");
                 await app.WaitForShutdownAsync();
             }
         }
