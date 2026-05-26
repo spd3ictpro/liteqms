@@ -26,6 +26,9 @@ dist/
 ## Development settings
 appsettings.Development.json
 
+## Session logs
+session-*.txt
+
 ## Temporary files
 *.tmp
 *.temp
