@@ -7,8 +7,29 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <title>LiteQMS Display</title>
+    <script>
+        (function() {
+            var isCompat = false;
+            var ua = navigator.userAgent;
+            var chromeMatch = ua.match(/Chrome\/(\d+)/);
+            if (chromeMatch) {
+                var ver = parseInt(chromeMatch[1], 10);
+                if (ver < 80) isCompat = true;
+            }
+            var androidMatch = ua.match(/Android\s+(\d+)/);
+            if (androidMatch && parseInt(androidMatch[1], 10) < 7) {
+                isCompat = true;
+            }
+            if (typeof CSS !== 'undefined' && CSS.supports && !CSS.supports('font-variation-settings', 'normal')) {
+                isCompat = true;
+            }
+            if (isCompat) {
+                document.documentElement.classList.add('compat-mode');
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="~/css/display.css" asp-append-version="true" />
 </head>
 <body>

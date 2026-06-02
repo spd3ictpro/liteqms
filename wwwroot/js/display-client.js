@@ -79,7 +79,13 @@ if (overlay) {
 
 document.addEventListener("click", enableAudio, { once: true });
 
+function isCompatMode() {
+    return document.documentElement.classList.contains("compat-mode");
+}
+
 function animateNewCall() {
+    if (isCompatMode()) return;
+
     patientNumberEl.classList.remove("pulse");
     void patientNumberEl.offsetWidth;
     patientNumberEl.classList.add("pulse");
