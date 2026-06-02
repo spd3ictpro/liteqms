@@ -79,6 +79,14 @@ if (overlay) {
 
 document.addEventListener("click", enableAudio, { once: true });
 
+document.addEventListener("keydown", function keyHandler(e) {
+    if (e.key === "Enter" || e.key === " ") {
+        if (overlay && overlay.style.display !== "none") {
+            enableAudio();
+        }
+    }
+});
+
 function isCompatMode() {
     return document.documentElement.classList.contains("compat-mode");
 }
