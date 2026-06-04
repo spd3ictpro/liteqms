@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.Net;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Windows.Forms;
 using LiteQMS.Data;
 using LiteQMS.Hubs;
@@ -42,6 +44,10 @@ static class Program
             }
             builder.Configuration["LiteQMS:Port"] = actualPort.ToString();
         }
+
+        var (primaryIP, allIPs) = GetLocalIPAddresses();
+        builder.Configuration["LiteQMS:PrimaryIP"] = primaryIP;
+        builder.Configuration["LiteQMS:AllIPs"] = string.Join(",", allIPs);
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
             ?? "Data Source=LiteQMS.db";
@@ -94,7 +100,7 @@ static class Program
         if (!app.Environment.IsDevelopment())
         {
             var localUrl = $"http://localhost:{actualPort}";
-            var hostnameUrl = $"http://{Environment.MachineName}:{actualPort}";
+            var ipUrl = $"http://{primaryIP}:{actualPort}";
 
             var logPath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -102,7 +108,7 @@ static class Program
             File.WriteAllText(logPath,
                 $"LiteQMS started at {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n" +
                 $"→ This PC:      {localUrl}\n" +
-                $"→ Other devices: {hostnameUrl}\n");
+                $"→ Other devices: {ipUrl}\n");
 
             OpenBrowser(localUrl);
 
@@ -125,7 +131,7 @@ static class Program
                 using var icon = new NotifyIcon
                 {
                     Icon = trayIcon,
-                    Text = "LiteQMS — " + hostnameUrl,
+                    Text = "LiteQMS — " + ipUrl,
                     Visible = true
                 };
 
@@ -148,7 +154,7 @@ static class Program
 
                 icon.ContextMenuStrip = menu;
                 icon.DoubleClick += (_, _) => OpenBrowser(localUrl);
-                icon.BalloonTipText = $"Other devices: {hostnameUrl}";
+                icon.BalloonTipText = $"Other devices: {ipUrl}";
 
                 icon.ShowBalloonTip(3000, "LiteQMS — Server is running", icon.BalloonTipText, ToolTipIcon.Info);
 
@@ -191,5 +197,41 @@ static class Program
         {
             // Silent — browser launch is non-critical
         }
+    }
+
+    static (string primaryIP, List<string> allIPs) GetLocalIPAddresses()
+    {
+        var ips = new List<string>();
+        string? gatewayIP = null;
+
+        foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (ni.OperationalStatus != OperationalStatus.Up) continue;
+
+            var desc = ni.Description;
+            if (desc.Contains("Tailscale", StringComparison.OrdinalIgnoreCase) ||
+                desc.Contains("Docker", StringComparison.OrdinalIgnoreCase) ||
+                desc.Contains("VirtualBox", StringComparison.OrdinalIgnoreCase) ||
+                desc.Contains("VMware", StringComparison.OrdinalIgnoreCase) ||
+                desc.Contains("Hyper-V", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var ipProps = ni.GetIPProperties();
+            var hasGateway = ipProps.GatewayAddresses.Count > 0;
+
+            foreach (var addr in ipProps.UnicastAddresses)
+            {
+                if (addr.Address.AddressFamily == AddressFamily.InterNetwork &&
+                    !IPAddress.IsLoopback(addr.Address))
+                {
+                    ips.Add(addr.Address.ToString());
+                    if (hasGateway && gatewayIP == null)
+                        gatewayIP = addr.Address.ToString();
+                }
+            }
+        }
+
+        var primary = gatewayIP ?? ips.FirstOrDefault() ?? "localhost";
+        return (primary, ips);
     }
 }

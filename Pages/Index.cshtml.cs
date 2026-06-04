@@ -16,17 +16,26 @@ public class IndexModel : PageModel
     [BindProperty]
     public string RoomNumber { get; set; } = string.Empty;
 
-    public string HostnameUrl { get; set; } = string.Empty;
+    public string PrimaryIPUrl { get; set; } = string.Empty;
 
     public string QrCodeBase64 { get; set; } = string.Empty;
+
+    public List<string> LocalIPUrls { get; set; } = new();
 
     public void OnGet()
     {
         var port = _config["LiteQMS:Port"] ?? "5000";
-        HostnameUrl = $"http://{Environment.MachineName}:{port}";
+        var primaryIP = _config["LiteQMS:PrimaryIP"] ?? "localhost";
+        PrimaryIPUrl = $"http://{primaryIP}:{port}";
+
+        var allIPs = _config["LiteQMS:AllIPs"] ?? "";
+        LocalIPUrls = allIPs
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(ip => $"http://{ip}:{port}")
+            .ToList();
 
         using var generator = new QRCodeGenerator();
-        var qrData = generator.CreateQrCode(HostnameUrl, QRCodeGenerator.ECCLevel.Q);
+        var qrData = generator.CreateQrCode(PrimaryIPUrl, QRCodeGenerator.ECCLevel.Q);
         using var png = new PngByteQRCode(qrData);
         QrCodeBase64 = Convert.ToBase64String(png.GetGraphic(4));
     }

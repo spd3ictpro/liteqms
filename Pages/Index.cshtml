@@ -106,11 +106,15 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.3rem; vertical-align: -2px;">
                         <circle cx="12" cy="12" r="10"/><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                     </svg>
-                    Other devices: <strong>@Model.HostnameUrl</strong>
+                    Other devices:
+                    @foreach (var url in Model.LocalIPUrls)
+                    {
+                        <div><strong>@url</strong></div>
+                    }
                 </div>
                 <div class="text-center mt-3">
                     <img src="data:image/png;base64,@Model.QrCodeBase64"
-                         alt="QR Code for @Model.HostnameUrl"
+                         alt="QR Code for @Model.PrimaryIPUrl"
                          style="width: 160px; height: 160px; border-radius: 8px;" />
                     <p class="text-muted small mt-2 mb-0">Scan to open on your phone</p>
                 </div>
