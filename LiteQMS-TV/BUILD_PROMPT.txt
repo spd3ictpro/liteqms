@@ -1,0 +1,164 @@
+You are building LiteQMS-TV — a companion Android project for the existing LiteQMS clinic queue calling system (ASP.NET Core + SQLite + SignalR). The goal is two Android apps that run on old Android 6.0 (API 23) smart TVs:
+
+1. WebView Wrapper — loads the web-based Display page in a fullscreen WebView
+2. Native App — native UI with native SignalR client, audio, wake lock
+
+Plus a server-side UDP discovery responder so the Android apps can auto-find the server on the LAN.
+
+## Project location
+
+Inside the existing liteqms repo: LiteQMS-TV/webview-app/ and LiteQMS-TV/native-app/
+
+## Part A — Server-Side: UDP Discovery Service
+
+Create Services/UdpDiscoveryService.cs:
+
+- BackgroundService that opens a UdpClient on port 56789
+- Listens for magic packet "LITEQMS_DISCOVER" (UTF-8)
+- Responds with JSON: {"ServerName":"PC-NAME","IP":"192.168.1.100","Port":5000}
+- IP address: enumerate network interfaces, find the first non-loopback IPv4 address on an interface that has a default gateway (that's the LAN interface). Fallback: any non-loopback IPv4.
+- Port: read from IConfiguration["LiteQMS:Port"]
+- If the UDP port is busy or binding fails, log a warning and exit silently — must NOT crash the app
+- Catch OperationCanceledException for graceful shutdown
+
+Modify Program.cs:
+- Register: builder.Services.AddHostedService<UdpDiscoveryService>();
+- Move builder.Configuration["LiteQMS:Port"] = actualPort.ToString(); outside the !IsDevelopment block so it's always set (currently only set in production)
+
+The discovery service must be zero-impact — no changes to DB, pages, routes, SignalR hub, or middleware. Must not break any existing functionality.
+
+## Part B — WebView Wrapper App
+
+LiteQMS-TV/webview-app/ — Android project, Kotlin, minSdk 23, targetSdk 30
+
+Single activity WebViewActivity.kt:
+- Reads saved server URL from SharedPreferences
+- If no URL saved → launch SettingsActivity for result
+- Loads {url}/Display in WebView
+- WebView config: JS enabled, DOM storage, no zoom, mediaPlaybackRequiresUserGesture = false, same-host navigation only
+- Immersive fullscreen: SYSTEM_UI_FLAG_IMMERSIVE_STICKY, hide action bar, re-apply on window focus change
+- Wake lock: FLAG_KEEP_SCREEN_ON
+- Error handling: onReceivedError → show retry view
+- Orientation: locked to sensorLandscape
+
+SettingsActivity.kt:
+- Text field for server URL
+- "Auto-discover" button → runs DiscoveryService UDP scan
+- "Test Connection" → HTTP GET on /Display
+- Save → SharedPreferences, return result to WebViewActivity
+
+DiscoveryService.kt:
+- Broadcast "LITEQMS_DISCOVER" to 255.255.255.255:56789 via DatagramSocket
+- Listen for responses with 3-second socket timeout
+- Parse JSON responses into ServerInfo(name, ip, port) list
+- Run on background coroutine
+
+## Part C — Native App
+
+LiteQMS-TV/native-app/ — Android project, Kotlin, minSdk 23
+
+Dependencies:
+- com.microsoft.signalr:signalr:7.0.0 (SignalR Java client, requires okhttp)
+- org.jetbrains.kotlinx:kotlinx-coroutines-android
+
+signalr/Models.kt:
+```kotlin
+data class CallState(
+    val roomNumber: String,
+    val patientNumber: String,
+    val timestamp: String,
+    val recentCalls: List<RecentCall>,
+    val callCount: Int,
+    val isRecall: Boolean
+)
+data class RecentCall(val id: Int, val roomNumber: String, val patientNumber: String, val timestamp: String, val isCNA: Boolean)
+```
+
+signalr/SignalRService.kt:
+- HubConnection to {server}/queueHub
+- Register handlers for "NewCall" (→ DisplayViewModel), "QueueReset" (→ clear), "ReceiveCurrentState" (→ initial sync)
+- On connected: invoke "RequestCurrentState"
+- Reconnect with backoff (1s, 5s, 30s)
+- Expose connectionState: StateFlow<ConnectionState>
+
+display/DisplayActivity.kt:
+- Real main activity, no layout file needed (programmatic views or simple XML)
+- Shows: patient number (large 180sp+), room label, clock (Handler every 1s), recent calls (4 max), connection dot, "Just Called" badge, recall indicator
+- On NewCall: animate number (scale+fade), play ding-dong, update recent list
+- On QueueReset: show dashes, clear list
+- Immersive fullscreen + wake lock (same as WebView app)
+- Orientation: locked to sensorLandscape
+
+audio/AudioPlayer.kt:
+- Pre-load ding-dong.mp3 from assets using MediaPlayer
+- play(): seekTo(0), start
+- Handle audio focus
+
+display/DisplayViewModel.kt:
+- StateFlow<DisplayState> holding current call info
+- Updated by SignalRService callbacks
+
+discovery/DiscoveryService.kt — same UDP scan logic as WebView version
+discovery/DiscoveryActivity.kt — scan + results list + manual entry
+settings/SettingsActivity.kt — saved URL management
+
+Copy ding-dong.mp3 from liteqms/wwwroot/sounds/ into the app's assets/.
+
+## Key behaviors to match from the existing Display page (display-client.js)
+
+- Clock updates every second
+- On NewCall: update patient number + room, play audio, pulse animation on number, show "Just Called" badge that fades after 5s, rebuild recent calls list
+- On QueueReset: show — for number and room, empty recent list
+- On connect: call RequestCurrentState to get current state
+- Reconnection: when disconnected, show red status; when reconnecting, show "Reconnecting..." banner; when connected, show green status
+- Audio: enable after first interaction (click to enable)
+
+## Android 6.0 (API 23) compatibility notes
+
+- Use AppCompat, not Material Components (API 23 supports AppCompat fine)
+- No MediaPlayer.create(assets, ...) issues on API 23
+- WakeLock via PowerManager — add WAKE_LOCK permission
+- SYSTEM_UI_FLAG_IMMERSIVE_STICKY available since API 19 — fine
+- No WindowInsetsController (API 30+) — use legacy systemUiVisibility
+- Kotlin coroutines work on API 23
+- SignalR client works on API 23 (uses OkHttp3, min API 21)
+- Test with Android 6.0 emulator or real device
+
+## Build configuration
+
+Both apps:
+```groovy
+android {
+    compileSdk 30
+    defaultConfig {
+        minSdk 23
+        targetSdk 30
+    }
+}
+compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+}
+kotlinOptions { jvmTarget = "1.8" }
+```
+
+Root build.gradle.kts:
+```kotlin
+plugins {
+    id("com.android.application") version "7.4.2" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.0" apply false
+}
+```
+
+## Implementation order
+
+1. Part A — UdpDiscoveryService + Program.cs modification
+2. Build both webview-app and native-app scaffolding (project files, manifests, gradle)
+3. WebView wrapper (simpler, validates approach)
+4. Native app (reuses discovery, adds SignalR + native UI)
+
+## Verify
+
+- Server: run dotnet build and dotnet run — no errors, existing pages work, no crashes
+- Discovery: send UDP packet with "LITEQMS_DISCOVER" to the server, receive JSON response
+- Android apps: build with ./gradlew assembleDebug, install on API 23 device

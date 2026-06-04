@@ -32,3 +32,13 @@ session-*.txt
 ## Temporary files
 *.tmp
 *.temp
+
+## Android
+*.apk
+*.aab
+*.dex
+*.class
+*.iml
+.gradle/
+build/
+local.properties

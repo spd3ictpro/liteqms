@@ -42,8 +42,8 @@ static class Program
             {
                 builder.Configuration["Urls"] = $"http://0.0.0.0:{actualPort}";
             }
-            builder.Configuration["LiteQMS:Port"] = actualPort.ToString();
         }
+        builder.Configuration["LiteQMS:Port"] = actualPort.ToString();
 
         var (primaryIP, allIPs) = GetLocalIPAddresses();
         builder.Configuration["LiteQMS:PrimaryIP"] = primaryIP;
@@ -69,6 +69,7 @@ static class Program
 
         builder.Services.AddSingleton<QueueStateService>();
         builder.Services.AddHostedService<MidnightResetService>();
+        builder.Services.AddHostedService<UdpDiscoveryService>();
 
         var app = builder.Build();
 
