@@ -10,12 +10,15 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.ScaleAnimation
+import android.graphics.drawable.GradientDrawable
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -37,12 +40,20 @@ class DisplayActivity : AppCompatActivity() {
     companion object {
         private const val PREFS_NAME = "liteqms_native"
         private const val KEY_SERVER_URL = "server_url"
-        private const val REQUEST_SETTINGS = 100
     }
 
     private lateinit var viewModel: DisplayViewModel
     private var signalR: SignalRService? = null
     private lateinit var audioPlayer: AudioPlayer
+
+    private val settingsLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val url = getSavedUrl()
+            if (url != null) connectSignalR(url)
+        }
+    }
 
     private lateinit var patientNumberText: TextView
     private lateinit var roomLabelText: TextView
@@ -57,9 +68,12 @@ class DisplayActivity : AppCompatActivity() {
     private lateinit var reconnectSettingsBtn: Button
     private lateinit var rootLayout: FrameLayout
 
+    private lateinit var settingsGear: Button
+
     private var clockJob: Job? = null
     private var badgeJob: Job? = null
     private var animationJob: Job? = null
+    private var gearHideJob: Job? = null
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -85,22 +99,13 @@ class DisplayActivity : AppCompatActivity() {
 
         val url = getSavedUrl()
         if (url == null) {
-            startActivityForResult(Intent(this, com.liteqms.tv.settings.SettingsActivity::class.java), REQUEST_SETTINGS)
+            settingsLauncher.launch(Intent(this, com.liteqms.tv.settings.SettingsActivity::class.java))
         } else {
             connectSignalR(url)
         }
 
         observeViewModel()
         startClock()
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_SETTINGS && resultCode == RESULT_OK) {
-            val url = getSavedUrl()
-            if (url != null) connectSignalR(url)
-        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -115,6 +120,20 @@ class DisplayActivity : AppCompatActivity() {
         clockJob?.cancel()
         badgeJob?.cancel()
         animationJob?.cancel()
+        gearHideJob?.cancel()
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (::settingsGear.isInitialized && settingsGear.visibility != View.VISIBLE) {
+            settingsGear.visibility = View.VISIBLE
+            settingsGear.requestFocus()
+        }
+        gearHideJob?.cancel()
+        gearHideJob = lifecycleScope.launch {
+            delay(3000)
+            if (::settingsGear.isInitialized) settingsGear.visibility = View.GONE
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     private fun connectSignalR(url: String) {
@@ -175,7 +194,15 @@ class DisplayActivity : AppCompatActivity() {
             setOnClickListener {
                 signalR?.onDestroy()
                 signalR = null
-                startActivityForResult(Intent(this@DisplayActivity, com.liteqms.tv.settings.SettingsActivity::class.java), REQUEST_SETTINGS)
+                settingsLauncher.launch(Intent(this@DisplayActivity, com.liteqms.tv.settings.SettingsActivity::class.java))
+            }
+            setOnFocusChangeListener { _, hasFocus ->
+                background = if (hasFocus) {
+                    GradientDrawable().apply {
+                        setColor(Color.parseColor("#0d9488"))
+                        cornerRadius = 8f
+                    }
+                } else null
             }
             reconnectBanner.addView(this)
         }
@@ -198,6 +225,34 @@ class DisplayActivity : AppCompatActivity() {
         ).apply {
             gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
             bottomMargin = 80
+        })
+
+        settingsGear = Button(this).apply {
+            text = "⚙"
+            textSize = 28f
+            setPadding(16, 16, 16, 16)
+            visibility = View.GONE
+            setOnClickListener {
+                signalR?.onDestroy()
+                signalR = null
+                settingsLauncher.launch(Intent(this@DisplayActivity, com.liteqms.tv.settings.SettingsActivity::class.java))
+            }
+            setOnFocusChangeListener { _, hasFocus ->
+                background = if (hasFocus) {
+                    GradientDrawable().apply {
+                        setColor(Color.parseColor("#0d9488"))
+                        cornerRadius = 8f
+                    }
+                } else null
+            }
+        }
+        rootLayout.addView(settingsGear, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.END
+            topMargin = 16
+            rightMargin = 16
         })
     }
 

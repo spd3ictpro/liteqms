@@ -66,37 +66,41 @@ class SignalRService(
 
     private fun connect() {
         job = scope.launch {
-            try {
+            while (isActive) {
                 _connectionState.value = ConnectionState.RECONNECTING
-                connection?.start()?.blockingAwait()
-                _connectionState.value = ConnectionState.CONNECTED
-                connection?.send("RequestCurrentState")
-                Log.i(TAG, "SignalR connected and state requested")
-            } catch (e: Exception) {
-                Log.e(TAG, "SignalR connect failed", e)
-                _connectionState.value = ConnectionState.DISCONNECTED
-                delay(5000)
-                connect()
+                try {
+                    connection?.start()?.blockingAwait()
+                    _connectionState.value = ConnectionState.CONNECTED
+                    connection?.send("RequestCurrentState")
+                    Log.i(TAG, "SignalR connected and state requested")
+                    return@launch
+                } catch (e: Exception) {
+                    Log.e(TAG, "SignalR connect failed", e)
+                    _connectionState.value = ConnectionState.DISCONNECTED
+                    delay(5000)
+                }
             }
         }
     }
 
-    private fun reconnect(attempt: Int = 0) {
+    private fun reconnect() {
         job = scope.launch {
-            _connectionState.value = ConnectionState.RECONNECTING
+            var attempt = 0
             val delays = listOf(1000L, 5000L, 30000L)
-            val delay = delays.getOrElse(attempt) { 30000L }
-            delay(delay)
-
-            try {
-                connection?.start()?.blockingAwait()
-                _connectionState.value = ConnectionState.CONNECTED
-                connection?.send("RequestCurrentState")
-                Log.i(TAG, "SignalR reconnected")
-            } catch (e: Exception) {
-                Log.w(TAG, "SignalR reconnect attempt $attempt failed", e)
-                _connectionState.value = ConnectionState.DISCONNECTED
-                reconnect(attempt + 1)
+            while (isActive) {
+                _connectionState.value = ConnectionState.RECONNECTING
+                delay(delays.getOrElse(attempt) { 30000L })
+                try {
+                    connection?.start()?.blockingAwait()
+                    _connectionState.value = ConnectionState.CONNECTED
+                    connection?.send("RequestCurrentState")
+                    Log.i(TAG, "SignalR reconnected")
+                    return@launch
+                } catch (e: Exception) {
+                    Log.w(TAG, "SignalR reconnect attempt ${attempt + 1} failed", e)
+                    attempt++
+                    _connectionState.value = ConnectionState.DISCONNECTED
+                }
             }
         }
     }
