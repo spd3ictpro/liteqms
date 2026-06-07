@@ -32,6 +32,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import androidx.core.widget.TextViewCompat
+import android.util.TypedValue
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -392,10 +394,11 @@ class DisplayActivity : AppCompatActivity() {
         }
 
         roomLabelText = TextView(this).apply {
-            textSize = 60f
+            textSize = 115f
             setTypeface(null, Typeface.BOLD)
             setTextColor(Color.parseColor("#0d9488"))
             gravity = Gravity.CENTER
+            TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(this, 24, 115, 2, TypedValue.COMPLEX_UNIT_SP)
             inner.addView(this)
         }
 
@@ -494,11 +497,20 @@ class DisplayActivity : AppCompatActivity() {
                 }
 
                 val number = TextView(this).apply {
-                    text = call.patientNumber
-                    textSize = 48f
+                    textSize = 60f
                     setTypeface(null, Typeface.BOLD)
                     setTextColor(Color.parseColor("#0f172a"))
                     gravity = Gravity.CENTER
+                    TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(this, 24, 60, 2, TypedValue.COMPLEX_UNIT_SP)
+                }
+                item.addView(number)
+
+                val room = TextView(this).apply {
+                    textSize = 32f
+                    setTypeface(null, Typeface.BOLD)
+                    setTextColor(Color.parseColor("#0d9488"))
+                    gravity = Gravity.CENTER
+                    TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(this, 16, 32, 2, TypedValue.COMPLEX_UNIT_SP)
                 }
                 item.addView(number)
 
