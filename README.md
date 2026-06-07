@@ -35,6 +35,33 @@ The app will open in your browser automatically when you run it.
 - **3 color themes** — pick the look you like
 - **Update checker** — LiteQMS will let you know when a new version is available
 - **Works offline** — no internet needed once installed
+- **Native Android TV app** — dedicated native companion app with SignalR, UDP auto-discovery, D-pad navigation, and auto-sizing UI
+
+---
+
+## LiteQMS-TV (Android Companion App)
+
+A companion Android project for the **native TV display** experience. Two variants:
+
+| Variant | Description |
+|---------|-------------|
+| **Native app** | Kotlin + SignalR Java client, programmatic UI, auto-sizing text, full D-pad/remote support, UDP auto-discovery |
+| WebView app | Lightweight WebView wrapper (planned) |
+
+### Features
+- **Real-time SignalR** — connects directly to the LiteQMS server via SignalR
+- **UDP discovery** — auto-finds the server on the LAN via UDP broadcast on port 56789
+- **Auto-sizing text** — room labels and recent items scale down to fit long names
+- **D-pad navigation** — designed for Android TV remotes with focus indicators
+- **Settings screen** — manual URL entry + auto-discover + test connection
+- **Immersive fullscreen** — hides system bars, keeps screen on
+
+### Build
+```bash
+cd LiteQMS-TV
+./gradlew assembleDebug
+```
+APK at `LiteQMS-TV/native-app/build/outputs/apk/debug/native-app-debug.apk`
 
 ---
 

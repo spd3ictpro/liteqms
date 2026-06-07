@@ -1,10 +1,39 @@
 # LiteQMS — Development Summary
-# Date: 24 May 2026
-# Project Path: D:\Programs\liteqms
+# Date: 7 June 2026
+# Project Path: C:\Users\User\liteqms
+
+### Stage 6 — LiteQMS-TV Native Android App (4 June 2026)
+- [x] UDP discovery service (`UdpDiscoveryService.cs`) — listens for `LITEQMS_DISCOVER` on port 56789
+- [x] Native Android app project scaffolded (Kotlin, minSdk 23, targetSdk 30)
+- [x] SignalR client integration with `ReceiveCurrentState` / `NewCall` / `QueueReset` / `CNAUpdated` events
+- [x] Full-screen display UI: patient number (180sp), room label, recent calls sidebar, clock
+- [x] Ding-dong audio playback via `AudioPlayer`
+- [x] UDP discovery on Android: broadcasts to `255.255.255.255:56789`, parses JSON response
+- [x] Settings screen: manual URL entry, auto-discover, test connection
+- [x] Server URL persistence via SharedPreferences
+- [x] Reconnection logic with exponential backoff (1s, 5s, 30s)
+- [x] Connection state indicator (green/yellow/red dot + reconnection banner)
+
+### Stage 6b — D-pad Navigation & Remote Support (4 June 2026)
+- [x] `onKeyDown` handler — any key press shows settings gear button
+- [x] Settings gear auto-hides after 3 seconds of inactivity
+- [x] Focus highlight on Settings button (`GradientDrawable` teal background)
+- [x] Migrated from deprecated `startActivityForResult` to `registerForActivityResult`
+
+### Stage 6c — Reconnect Bugfix v1.0.0.1 / v1.0.2 (7 June 2026)
+- [x] **Bug:** `ReceiveCurrentState` and `NewCall` both used the same `onNewCall` callback
+- [x] **Effect:** Every reconnect triggered ding-dong sound + "Just Called" badge + number pulse for old state
+- [x] **Fix:** Added separate `onStateSync` callback for `ReceiveCurrentState` — silenty updates UI without audio/animation/badge
+- [x] **Files:** `SignalRService.kt`, `DisplayViewModel.kt`, `DisplayActivity.kt`
+
+### Stage 6d — Auto-sizing Text & UI Polish v1.0.2 (7 June 2026)
+- [x] Room label below patient number: `60sp` → `115sp` with autosize (24–115sp)
+- [x] Recent item patient number: `48sp` → `60sp` with autosize (24–60sp)
+- [x] Recent item room label: `24sp` → `32sp` with autosize (16–32sp)
+- [x] Uses `TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration` — scales down gracefully for long room names
 
 ---
 
-## PROJECT OVERVIEW
 
 LiteQMS is a Clinic Queue Calling System built with .NET 9 ASP.NET Core Razor Pages + SignalR + SQLite.
 It runs locally on one PC, browser-based for all users. No authentication.
@@ -142,6 +171,32 @@ LiteQMS/
 │   ├── Error.cshtml / .cs              # User-friendly error page with branding
 │   ├── _ViewImports.cshtml             # Tag helpers, namespace imports
 │   └── _ViewStart.cshtml               # Default layout
+├── LiteQMS-TV/
+│   ├── build.gradle.kts                 # Root Gradle config (AGP 7.4.2, Kotlin 1.9.0)
+│   ├── settings.gradle.kts              # Project settings, includes :native-app
+│   ├── gradlew / gradlew.bat            # Gradle wrapper
+│   └── native-app/
+│       ├── build.gradle.kts             # Android app config (minSdk 23, targetSdk 30)
+│       └── src/main/
+│           ├── AndroidManifest.xml
+│           ├── res/
+│           │   ├── raw/ding_dong.mp3
+│           │   ├── values/themes.xml
+│           │   └── mipmap-*/ic_launcher.png
+│           └── java/com/liteqms/tv/
+│               ├── signalr/
+│               │   ├── Models.kt            # CallState, RecentCall data classes
+│               │   └── SignalRService.kt    # HubConnection, events, reconnect logic
+│               ├── display/
+│               │   ├── DisplayActivity.kt   # Main TV UI (programmatic views, clock, animation)
+│               │   └── DisplayViewModel.kt  # StateFlow-based UI state management
+│               ├── audio/
+│               │   └── AudioPlayer.kt       # MediaPlayer with audio focus handling
+│               ├── discovery/
+│               │   ├── DiscoveryService.kt  # UDP broadcast scan for LiteQMS servers
+│               │   └── DiscoveryActivity.kt # Server list UI
+│               └── settings/
+│                   └── SettingsActivity.kt  # URL entry, test connection, save
 └── wwwroot/
     ├── css/
     │   ├── site.css                    # Global styles (3 themes: teal/blue/dark)
