@@ -506,20 +506,12 @@ class DisplayActivity : AppCompatActivity() {
                 item.addView(number)
 
                 val room = TextView(this).apply {
+                    text = call.roomNumber
                     textSize = 32f
                     setTypeface(null, Typeface.BOLD)
                     setTextColor(Color.parseColor("#0d9488"))
                     gravity = Gravity.CENTER
                     TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(this, 16, 32, 2, TypedValue.COMPLEX_UNIT_SP)
-                }
-                item.addView(number)
-
-                val room = TextView(this).apply {
-                    text = call.roomNumber
-                    textSize = 24f
-                    setTypeface(null, Typeface.BOLD)
-                    setTextColor(Color.parseColor("#0d9488"))
-                    gravity = Gravity.CENTER
                 }
                 item.addView(room)
 
