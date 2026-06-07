@@ -41,6 +41,20 @@ class DisplayViewModel {
         )
     }
 
+    fun onStateSync(state: CallState) {
+        _uiState.value = _uiState.value.copy(
+            patientNumber = state.patientNumber,
+            roomLabel = state.roomNumber,
+            recentCalls = state.recentCalls
+                .take(4)
+                .map { RecentCallUi(it.patientNumber, it.roomNumber) },
+            hasRecentCalls = state.recentCalls.isNotEmpty(),
+            isRecall = state.isRecall,
+            showJustCalledBadge = false,
+            animateNewCall = false
+        )
+    }
+
     fun onQueueReset() {
         _uiState.value = DisplayUiState(
             connectionState = _uiState.value.connectionState

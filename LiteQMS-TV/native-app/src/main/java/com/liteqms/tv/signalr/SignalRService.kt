@@ -18,6 +18,7 @@ enum class ConnectionState {
 class SignalRService(
     private val serverUrl: String,
     private val onNewCall: (CallState) -> Unit,
+    private val onStateSync: (CallState) -> Unit,
     private val onQueueReset: () -> Unit,
     private val onCnaUpdated: (Int, Boolean) -> Unit
 ) {
@@ -44,7 +45,7 @@ class SignalRService(
         connection!!.on("ReceiveCurrentState", Action1<Any> { raw ->
             @Suppress("UNCHECKED_CAST")
             val map = raw as? Map<*, *>
-            map?.let { parseCallState(it) }?.let { onNewCall(it) }
+            map?.let { parseCallState(it) }?.let { onStateSync(it) }
         }, Any::class.java)
 
         connection!!.on("CNAUpdated", Action1<Any> { raw ->

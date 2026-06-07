@@ -146,6 +146,11 @@ class DisplayActivity : AppCompatActivity() {
                     audioPlayer.play()
                 }
             },
+            onStateSync = { state ->
+                mainHandler.post {
+                    viewModel.onStateSync(state)
+                }
+            },
             onQueueReset = { mainHandler.post { viewModel.onQueueReset() } },
             onCnaUpdated = { _, _ -> }
         )
