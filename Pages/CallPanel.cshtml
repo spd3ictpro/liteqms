@@ -468,9 +468,12 @@
             var numpad = document.getElementById('mobileNumpad');
             if (!numpad) return;
 
-            if (window.innerWidth <= 768) {
-                inputs.forEach(function(i) { i.readOnly = true; });
+            var mq = window.matchMedia('(max-width: 768px) and (pointer: coarse)');
+            function toggleReadOnly(e) {
+                inputs.forEach(function(i) { i.readOnly = e.matches; });
             }
+            mq.addEventListener('change', toggleReadOnly);
+            toggleReadOnly(mq);
 
             numpad.addEventListener('click', function(e) {
                 var btn = e.target.closest('.numpad-btn');

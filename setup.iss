@@ -2,7 +2,7 @@
 ; Requires: publish.bat run first (produces .\dist\LiteQMS.exe)
 
 #define MyAppName "LiteQMS"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.3"
 #define MyAppPublisher "LiteQMS"
 #define MyAppURL "http://localhost:5000"
 #define MyAppExeName "LiteQMS.exe"
