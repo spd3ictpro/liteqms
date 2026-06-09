@@ -497,6 +497,7 @@ class DisplayActivity : AppCompatActivity() {
                 }
 
                 val number = TextView(this).apply {
+                    text = call.patientNumber
                     textSize = 60f
                     setTypeface(null, Typeface.BOLD)
                     setTextColor(Color.parseColor("#0f172a"))
