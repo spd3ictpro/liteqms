@@ -170,6 +170,37 @@ body {
     text-transform: uppercase;
 }
 
+.room-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.room-row.arrow-after {
+    flex-direction: row-reverse;
+}
+
+.room-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 10rem;
+    height: 10rem;
+    flex-shrink: 0;
+}
+
+.room-arrow svg {
+    width: 100%;
+    height: 100%;
+    stroke: var(--teal-primary);
+    stroke-width: 3;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .just-called-badge {
     position: absolute;
     bottom: 2.5rem;

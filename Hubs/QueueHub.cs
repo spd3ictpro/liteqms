@@ -18,10 +18,11 @@ public class QueueHub : Hub
         _logger = logger;
     }
 
-    public async Task<CallResult> CallPatient(string patientNumber, string roomNumber)
+    public async Task<CallResult> CallPatient(string patientNumber, string roomNumber, string arrowDirection = "")
     {
         patientNumber = patientNumber.Trim();
         roomNumber = roomNumber.Trim();
+        arrowDirection = arrowDirection.Trim().ToLower();
 
         if (string.IsNullOrWhiteSpace(patientNumber) || patientNumber.Length != 4 || !patientNumber.All(char.IsDigit))
         {
@@ -67,7 +68,7 @@ public class QueueHub : Hub
                     .Select(r => new RecentCall(r.Id, r.RoomNumber, r.PatientNumber, r.Timestamp, r.IsCNA))
                     .ToList();
 
-                var state = new CallState(roomNumber, patientNumber, callRecord.Timestamp, recentCalls, newCount, isRecall);
+                var state = new CallState(roomNumber, arrowDirection, patientNumber, callRecord.Timestamp, recentCalls, newCount, isRecall);
                 await _queueState.BroadcastStateAsync(state);
             }
 
@@ -125,6 +126,7 @@ public class QueueHub : Hub
 
 public record CallState(
     string RoomNumber,
+    string ArrowDirection,
     string PatientNumber,
     DateTime Timestamp,
     List<RecentCall> RecentCalls,

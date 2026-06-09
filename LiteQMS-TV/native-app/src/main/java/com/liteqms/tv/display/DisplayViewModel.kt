@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 data class DisplayUiState(
     val patientNumber: String = "—",
     val roomLabel: String = "—",
+    val arrowDirection: String = "",
     val recentCalls: List<RecentCallUi> = emptyList(),
     val hasRecentCalls: Boolean = false,
     val connectionState: ConnectionState = ConnectionState.DISCONNECTED,
@@ -31,6 +32,7 @@ class DisplayViewModel {
         _uiState.value = _uiState.value.copy(
             patientNumber = state.patientNumber,
             roomLabel = state.roomNumber,
+            arrowDirection = state.arrowDirection,
             recentCalls = state.recentCalls
                 .take(4)
                 .map { RecentCallUi(it.patientNumber, it.roomNumber) },
@@ -45,6 +47,7 @@ class DisplayViewModel {
         _uiState.value = _uiState.value.copy(
             patientNumber = state.patientNumber,
             roomLabel = state.roomNumber,
+            arrowDirection = state.arrowDirection,
             recentCalls = state.recentCalls
                 .take(4)
                 .map { RecentCallUi(it.patientNumber, it.roomNumber) },

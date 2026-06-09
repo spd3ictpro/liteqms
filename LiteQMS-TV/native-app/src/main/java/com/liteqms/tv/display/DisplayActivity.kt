@@ -59,6 +59,8 @@ class DisplayActivity : AppCompatActivity() {
 
     private lateinit var patientNumberText: TextView
     private lateinit var roomLabelText: TextView
+    private lateinit var roomArrowText: TextView
+    private lateinit var roomRow: LinearLayout
     private lateinit var clockText: TextView
     private lateinit var dateText: TextView
     private lateinit var justCalledBadge: TextView
@@ -393,14 +395,31 @@ class DisplayActivity : AppCompatActivity() {
             inner.addView(this)
         }
 
+        roomRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+
+        roomArrowText = TextView(this).apply {
+            textSize = 115f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(Color.parseColor("#0d9488"))
+            gravity = Gravity.CENTER
+            visibility = View.GONE
+            setPadding(0, 0, 24, 0)
+            roomRow.addView(this)
+        }
+
         roomLabelText = TextView(this).apply {
             textSize = 115f
             setTypeface(null, Typeface.BOLD)
             setTextColor(Color.parseColor("#0d9488"))
             gravity = Gravity.CENTER
             TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(this, 24, 115, 2, TypedValue.COMPLEX_UNIT_SP)
-            inner.addView(this)
+            roomRow.addView(this)
         }
+
+        inner.addView(roomRow)
 
         content.addView(inner)
         display.addView(content)
@@ -412,6 +431,37 @@ class DisplayActivity : AppCompatActivity() {
             viewModel.uiState.collectLatest { state ->
                 patientNumberText.text = state.patientNumber
                 roomLabelText.text = state.roomLabel
+
+                if (state.arrowDirection.isNotEmpty()) {
+                    roomArrowText.text = when (state.arrowDirection) {
+                        "left" -> "\u2190"
+                        "right" -> "\u2192"
+                        "up" -> "\u2191"
+                        "down" -> "\u2193"
+                        "up-left" -> "\u2196"
+                        "up-right" -> "\u2197"
+                        "down-left" -> "\u2199"
+                        "down-right" -> "\u2198"
+                        else -> ""
+                    }
+                    val hasArrow = roomArrowText.text.isNotEmpty()
+                    roomArrowText.visibility = if (hasArrow) View.VISIBLE else View.GONE
+
+                    if (hasArrow) {
+                        val isLeft = state.arrowDirection in listOf("left", "up-left", "down-left")
+                        roomRow.removeAllViews()
+                        if (isLeft) {
+                            roomRow.addView(roomArrowText)
+                            roomRow.addView(roomLabelText)
+                        } else {
+                            roomRow.addView(roomLabelText)
+                            roomRow.addView(roomArrowText)
+                        }
+                    }
+                } else {
+                    roomArrowText.text = ""
+                    roomArrowText.visibility = View.GONE
+                }
 
                 when (state.connectionState) {
                     ConnectionState.CONNECTED -> {

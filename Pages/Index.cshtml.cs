@@ -16,6 +16,9 @@ public class IndexModel : PageModel
     [BindProperty]
     public string RoomNumber { get; set; } = string.Empty;
 
+    [BindProperty]
+    public string ArrowDirection { get; set; } = string.Empty;
+
     public string PrimaryIPUrl { get; set; } = string.Empty;
 
     public string QrCodeBase64 { get; set; } = string.Empty;
@@ -57,6 +60,7 @@ public class IndexModel : PageModel
         }
 
         HttpContext.Session.SetString("RoomNumber", RoomNumber.ToUpper());
+        HttpContext.Session.SetString("ArrowDirection", ArrowDirection);
         return RedirectToPage("/CallPanel");
     }
 }

@@ -15,6 +15,7 @@ const invalidIcon = document.getElementById("invalidIcon");
 const syncDot = document.getElementById("syncDot");
 const syncLabel = document.getElementById("syncLabel");
 const roomNumber = document.body.dataset.room || "";
+const arrowDirection = document.body.dataset.arrow || "";
 const recallFeedback = document.getElementById("recallFeedback");
 const recallFeedbackText = document.getElementById("recallFeedbackText");
 
@@ -119,7 +120,7 @@ document.addEventListener("click", async (e) => {
     if (recallBtn) {
         const patient = recallBtn.dataset.patient;
         try {
-            const result = await connection.invoke("CallPatient", patient, roomNumber);
+            const result = await connection.invoke("CallPatient", patient, roomNumber, arrowDirection);
             if (result.success) {
                 clearAllDigits();
                 showRecallFeedback("Recalled successfully.", "success");
@@ -157,9 +158,9 @@ function updatePreview(state) {
     const previewRecallBtn = document.getElementById("previewRecallBtn");
     if (state.patientNumber) {
         previewRecallBtn.dataset.patient = state.patientNumber;
-        previewRecallBtn.style.display = "inline-block";
+        previewRecallBtn.classList.add("visible");
     } else {
-        previewRecallBtn.style.display = "none";
+        previewRecallBtn.classList.remove("visible");
     }
 
     updateCallCountBadge(state.callCount);

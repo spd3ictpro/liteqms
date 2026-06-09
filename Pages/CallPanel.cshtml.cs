@@ -27,6 +27,7 @@ public class CallPanelModel : PageModel
     public string PatientNumber { get; set; } = string.Empty;
 
     public string RoomNumber { get; set; } = string.Empty;
+    public string ArrowDirection { get; set; } = string.Empty;
     public List<CallRecord> RecentCalls { get; set; } = new();
     public List<RecentCall> PreviewRecentCalls { get; set; } = new();
     public int CallCount { get; set; }
@@ -36,6 +37,7 @@ public class CallPanelModel : PageModel
     public IActionResult OnGet()
     {
         RoomNumber = HttpContext.Session.GetString("RoomNumber") ?? string.Empty;
+        ArrowDirection = HttpContext.Session.GetString("ArrowDirection") ?? string.Empty;
         if (string.IsNullOrEmpty(RoomNumber))
         {
             return RedirectToPage("/Index");
@@ -57,6 +59,7 @@ public class CallPanelModel : PageModel
     public async Task<IActionResult> OnPost()
     {
         RoomNumber = HttpContext.Session.GetString("RoomNumber") ?? string.Empty;
+        ArrowDirection = HttpContext.Session.GetString("ArrowDirection") ?? string.Empty;
         if (string.IsNullOrEmpty(RoomNumber))
         {
             return RedirectToPage("/Index");
@@ -114,7 +117,7 @@ public class CallPanelModel : PageModel
                     .Select(r => new RecentCall(r.Id, r.RoomNumber, r.PatientNumber, r.Timestamp, r.IsCNA))
                     .ToList();
 
-                var state = new CallState(RoomNumber, PatientNumber, callRecord.Timestamp, recentCalls, CallCount + 1, isRecall);
+                var state = new CallState(RoomNumber, ArrowDirection, PatientNumber, callRecord.Timestamp, recentCalls, CallCount + 1, isRecall);
                 await _queueState.BroadcastStateAsync(state);
 
                 _logger.LogInformation("Patient {PatientNumber} called from {RoomNumber} (display updated)", PatientNumber, RoomNumber);

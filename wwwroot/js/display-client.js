@@ -11,6 +11,7 @@ const audio = document.getElementById("dingDong");
 const overlay = document.getElementById("audioOverlay");
 const patientNumberEl = document.getElementById("patientNumber");
 const justCalledBadge = document.getElementById("justCalledBadge");
+const roomArrow = document.getElementById("roomArrow");
 const syncDot = document.getElementById("syncDot");
 const syncLabel = document.getElementById("syncLabel");
 const reconnectBanner = document.getElementById("reconnectBanner");
@@ -108,9 +109,34 @@ function animateNewCall() {
     }, 5000);
 }
 
+var arrowSvgs = {
+    "left": '<svg viewBox="0 0 24 24"><line x1="20" y1="12" x2="4" y2="12"/><polyline points="10 18 4 12 10 6"/></svg>',
+    "right": '<svg viewBox="0 0 24 24"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="14 18 20 12 14 6"/></svg>',
+    "up": '<svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="4"/><polyline points="6 10 12 4 18 10"/></svg>',
+    "down": '<svg viewBox="0 0 24 24"><line x1="12" y1="4" x2="12" y2="20"/><polyline points="6 14 12 20 18 14"/></svg>',
+    "up-left": '<svg viewBox="0 0 24 24"><line x1="20" y1="20" x2="4" y2="4"/><polyline points="10 4 4 4 4 10"/></svg>',
+    "up-right": '<svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><polyline points="14 4 20 4 20 10"/></svg>',
+    "down-left": '<svg viewBox="0 0 24 24"><line x1="20" y1="4" x2="4" y2="20"/><polyline points="10 20 4 20 4 14"/></svg>',
+    "down-right": '<svg viewBox="0 0 24 24"><line x1="4" y1="4" x2="20" y2="20"/><polyline points="14 20 20 20 20 14"/></svg>'
+};
+
+function updateArrow(direction) {
+    var roomRow = document.getElementById("roomLabel").closest(".room-row");
+    if (direction && arrowSvgs[direction]) {
+        roomArrow.innerHTML = arrowSvgs[direction];
+        roomArrow.style.display = "flex";
+        var isLeft = direction === "left" || direction === "up-left" || direction === "down-left";
+        roomRow.classList.toggle("arrow-after", !isLeft);
+    } else {
+        roomArrow.innerHTML = "";
+        roomArrow.style.display = "none";
+    }
+}
+
 connection.on("NewCall", (state) => {
     document.getElementById("roomLabel").textContent = state.roomNumber;
     document.getElementById("patientNumber").textContent = state.patientNumber;
+    updateArrow(state.arrowDirection);
 
     if (audioEnabled) {
         audio.currentTime = 0;
@@ -151,6 +177,7 @@ connection.on("NewCall", (state) => {
 connection.on("QueueReset", () => {
     document.getElementById("roomLabel").textContent = "—";
     document.getElementById("patientNumber").textContent = "—";
+    updateArrow("");
     const recentList = document.getElementById("recentList");
     recentList.innerHTML = "";
     for (let i = 0; i < 4; i++) {

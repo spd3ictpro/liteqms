@@ -65,6 +65,88 @@
             color: var(--text-muted, #64748b);
             font-size: 0.875rem;
         }
+        .arrow-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.4rem;
+            max-width: 180px;
+            margin: 0 auto;
+        }
+        .arrow-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            aspect-ratio: 1;
+            border: 2px solid var(--border);
+            border-radius: 0.5rem;
+            background: var(--card-bg);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            padding: 0.4rem;
+        }
+        .arrow-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: var(--text-muted);
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.15s ease;
+        }
+        .arrow-btn:hover {
+            border-color: var(--primary-light);
+            background: var(--primary-bg);
+        }
+        .arrow-btn:hover svg {
+            stroke: var(--primary);
+        }
+        .arrow-btn.selected {
+            border-color: var(--primary);
+            background: var(--primary-bg);
+        }
+        .arrow-btn.selected svg {
+            stroke: var(--primary);
+        }
+        .arrow-btn.none-btn {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+        .arrow-btn.none-btn.selected {
+            color: var(--primary);
+        }
+        .arrow-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.15s ease;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .arrow-toggle:hover {
+            color: var(--primary);
+        }
+        .arrow-toggle .chevron {
+            transition: transform 0.2s ease;
+        }
+        .arrow-toggle .chevron.open {
+            transform: rotate(180deg);
+        }
+        .arrow-collapse {
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.25s ease;
+            max-height: 0;
+            opacity: 0;
+        }
+        .arrow-collapse.open {
+            max-height: 250px;
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -100,6 +182,28 @@
                         </div>
                         <span asp-validation-for="RoomNumber" class="text-danger"></span>
                     </div>
+                    <div class="mb-4">
+                        <div class="arrow-toggle" id="arrowToggle">
+                            <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                            Room Direction (optional)
+                        </div>
+                        <div class="arrow-collapse" id="arrowCollapse">
+                            <div class="arrow-grid mt-2" id="arrowGrid">
+                                <input type="hidden" asp-for="ArrowDirection" id="arrowHidden" />
+                                <button type="button" class="arrow-btn" data-arrow="up-left"><svg viewBox="0 0 24 24"><line x1="20" y1="20" x2="4" y2="4"/><polyline points="10 4 4 4 4 10"/></svg></button>
+                                <button type="button" class="arrow-btn" data-arrow="up"><svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="4"/><polyline points="6 10 12 4 18 10"/></svg></button>
+                                <button type="button" class="arrow-btn" data-arrow="up-right"><svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><polyline points="14 4 20 4 20 10"/></svg></button>
+                                <button type="button" class="arrow-btn" data-arrow="left"><svg viewBox="0 0 24 24"><line x1="20" y1="12" x2="4" y2="12"/><polyline points="10 18 4 12 10 6"/></svg></button>
+                                <button type="button" class="arrow-btn none-btn selected" data-arrow="">✕</button>
+                                <button type="button" class="arrow-btn" data-arrow="right"><svg viewBox="0 0 24 24"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="14 18 20 12 14 6"/></svg></button>
+                                <button type="button" class="arrow-btn" data-arrow="down-left"><svg viewBox="0 0 24 24"><line x1="20" y1="4" x2="4" y2="20"/><polyline points="10 20 4 20 4 14"/></svg></button>
+                                <button type="button" class="arrow-btn" data-arrow="down"><svg viewBox="0 0 24 24"><line x1="12" y1="4" x2="12" y2="20"/><polyline points="6 14 12 20 18 14"/></svg></button>
+                                <button type="button" class="arrow-btn" data-arrow="down-right"><svg viewBox="0 0 24 24"><line x1="4" y1="4" x2="20" y2="20"/><polyline points="14 20 20 20 20 14"/></svg></button>
+                            </div>
+                        </div>
+                    </div>
                     <button type="submit" class="btn btn-primary btn-lg w-100">Proceed</button>
                 </form>
                 <div class="network-banner">
@@ -122,7 +226,7 @@
         </div>
     </div>
     <div class="footer-text">
-                    LiteQMS v1.0.2
+                    LiteQMS v1.1.0
                     <a href="/Updates" class="text-muted text-decoration-none ms-3 small">Check for updates</a>
                     <span class="theme-dots ms-3">
             <button type="button" class="theme-dot teal theme-btn active" data-theme="teal" title="Teal theme"></button>
@@ -136,6 +240,32 @@
         document.getElementById('RoomNumber').addEventListener('input', function() {
             this.value = this.value.toUpperCase();
         });
+
+        (function() {
+            var grid = document.getElementById('arrowGrid');
+            var hidden = document.getElementById('arrowHidden');
+            if (!grid || !hidden) return;
+
+            grid.addEventListener('click', function(e) {
+                var btn = e.target.closest('.arrow-btn');
+                if (!btn) return;
+
+                grid.querySelectorAll('.arrow-btn').forEach(function(b) {
+                    b.classList.remove('selected');
+                });
+                btn.classList.add('selected');
+                hidden.value = btn.dataset.arrow || '';
+            });
+
+            var toggle = document.getElementById('arrowToggle');
+            var collapse = document.getElementById('arrowCollapse');
+            if (toggle && collapse) {
+                toggle.addEventListener('click', function() {
+                    collapse.classList.toggle('open');
+                    toggle.querySelector('.chevron').classList.toggle('open');
+                });
+            }
+        })();
     </script>
 </body>
 </html>

@@ -2,6 +2,7 @@ package com.liteqms.tv.signalr
 
 data class CallState(
     val roomNumber: String,
+    val arrowDirection: String,
     val patientNumber: String,
     val timestamp: String,
     val recentCalls: List<RecentCall>,

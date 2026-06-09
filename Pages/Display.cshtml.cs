@@ -20,6 +20,7 @@ public class DisplayModel : PageModel
     }
 
     public CallState? CurrentState { get; set; }
+    public string ArrowDirection { get; set; } = string.Empty;
 
     public async Task OnGet()
     {
@@ -27,6 +28,7 @@ public class DisplayModel : PageModel
         if (state != null)
         {
             CurrentState = state;
+            ArrowDirection = state.ArrowDirection;
         }
         else
         {
@@ -56,6 +58,7 @@ public class DisplayModel : PageModel
                     var isRecall = callCount > 1;
                     CurrentState = new CallState(
                         latest.RoomNumber,
+                        "",
                         latest.PatientNumber,
                         latest.Timestamp,
                         recentCalls,

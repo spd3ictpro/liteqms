@@ -71,8 +71,44 @@
                 <div class="patient-number" id="patientNumber">
                     @(Model.CurrentState?.PatientNumber ?? "—")
                 </div>
-                <div class="room-label" id="roomLabel">
-                    @(Model.CurrentState?.RoomNumber ?? "—")
+                <div class="room-row @(Model.ArrowDirection == "left" || Model.ArrowDirection == "up-left" || Model.ArrowDirection == "down-left" ? "" : "arrow-after")">
+                    <div class="room-arrow" id="roomArrow" style="display: @(string.IsNullOrEmpty(Model.ArrowDirection) ? "none" : "flex");">
+                        @if (Model.ArrowDirection == "left")
+                        {
+                            <svg viewBox="0 0 24 24"><line x1="20" y1="12" x2="4" y2="12"/><polyline points="10 18 4 12 10 6"/></svg>
+                        }
+                        else if (Model.ArrowDirection == "right")
+                        {
+                            <svg viewBox="0 0 24 24"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="14 18 20 12 14 6"/></svg>
+                        }
+                        else if (Model.ArrowDirection == "up")
+                        {
+                            <svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="4"/><polyline points="6 10 12 4 18 10"/></svg>
+                        }
+                        else if (Model.ArrowDirection == "down")
+                        {
+                            <svg viewBox="0 0 24 24"><line x1="12" y1="4" x2="12" y2="20"/><polyline points="6 14 12 20 18 14"/></svg>
+                        }
+                        else if (Model.ArrowDirection == "up-left")
+                        {
+                            <svg viewBox="0 0 24 24"><line x1="20" y1="20" x2="4" y2="4"/><polyline points="10 4 4 4 4 10"/></svg>
+                        }
+                        else if (Model.ArrowDirection == "up-right")
+                        {
+                            <svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><polyline points="14 4 20 4 20 10"/></svg>
+                        }
+                        else if (Model.ArrowDirection == "down-left")
+                        {
+                            <svg viewBox="0 0 24 24"><line x1="20" y1="4" x2="4" y2="20"/><polyline points="10 20 4 20 4 14"/></svg>
+                        }
+                        else if (Model.ArrowDirection == "down-right")
+                        {
+                            <svg viewBox="0 0 24 24"><line x1="4" y1="4" x2="20" y2="20"/><polyline points="14 20 20 20 20 14"/></svg>
+                        }
+                    </div>
+                    <div class="room-label" id="roomLabel">
+                        @(Model.CurrentState?.RoomNumber ?? "—")
+                    </div>
                 </div>
                 <div class="just-called-badge" id="justCalledBadge">Just Called</div>
             </div>

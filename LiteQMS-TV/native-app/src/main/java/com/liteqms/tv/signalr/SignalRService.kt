@@ -121,6 +121,7 @@ class SignalRService(
         val recentRaw = map["recentCalls"] as? List<Map<String, Any>> ?: emptyList()
         return CallState(
             roomNumber = map["roomNumber"] as? String ?: "",
+            arrowDirection = map["arrowDirection"] as? String ?: "",
             patientNumber = map["patientNumber"] as? String ?: "",
             timestamp = map["timestamp"] as? String ?: "",
             recentCalls = recentRaw.map { parseRecentCall(it) },
