@@ -1,0 +1,77 @@
+# Voice Announcement Plan
+
+## Announcement Flow
+
+Ding-dong → [patient digits as words] → [room type] [room number as Malay words]
+
+Example: `Ding-dong → kosong kosong kosong satu → bilik lima`
+
+## Word-to-Audio Mapping
+
+### Patient digits (always announced as individual digits)
+| Digit | File |
+|---|---|
+| 0 | `kosong.mp3` |
+| 1 | `satu.mp3` |
+| 2 | `dua.mp3` |
+| 3 | `tiga.mp3` |
+| 4 | `empat.mp3` |
+| 5 | `lima.mp3` |
+| 6 | `enam.mp3` |
+| 7 | `tujuh.mp3` |
+| 8 | `lapan.mp3` |
+| 9 | `sembilan.mp3` |
+
+### Room type
+| Word | File |
+|---|---|
+| Bilik | `bilik.mp3` |
+| Kaunter | `kaunter.mp3` |
+
+### Room number (Malay number words, max ~20)
+| Number | Files played |
+|---|---|
+| 1–9 | `satu.mp3` – `sembilan.mp3` |
+| 10 | `sepuluh.mp3` |
+| 11 | `sebelas.mp3` |
+| 12–19 | [digit] + `belas.mp3` (e.g. 12 → `dua.mp3` + `belas.mp3`) |
+| 20 | `puluh.mp3` |
+
+For >2-digit room numbers (unlikely at ~20 max), same pattern extends.
+
+## Files Required
+
+### Web app (`wwwroot/sounds/`)
+Same as Android (`res/raw/`) — 17 MP3 files total:
+- `kosong.mp3` through `sembilan.mp3` (10)
+- `bilik.mp3`, `kaunter.mp3` (2)
+- `belas.mp3`, `puluh.mp3` (2)
+- `sepuluh.mp3`, `sebelas.mp3` (2)
+- `ding-dong.mp3` (already exists)
+
+## Implementation
+
+### Web app — `wwwroot/js/display-client.js`
+- Audio queue system: play files sequentially, clear on new call
+- `announcePatient(number)` — maps each digit char to audio file
+- `announceRoom(room)` — parses "Bilik X" / "Kaunter X", returns ordered file list
+- Trigger: inside `connection.on("NewCall")` after `audio.play()`
+
+### Android TV — `AudioPlayer.kt`
+- Replace `MediaPlayer` with `SoundPool` (better for short SFX)
+- `playAnnouncement(patientNumber, roomNumber)` — builds file list, plays in sequence
+- Trigger: inside `onNewCall` lambda in `DisplayActivity.kt` after `audioPlayer.play()`
+
+## Edge Cases
+
+| Scenario | Behavior |
+|---|---|
+| New call arrives mid-announcement | Clear pending queue, play new announcement immediately |
+| Audio not yet enabled | New Audio() throws, `.catch()` silently skips |
+| Unrecognized room name (e.g. "Pharmacy") | Announce patient digits only, skip room part |
+| Room "Bilik 1" | `bilik.mp3` + `satu.mp3` |
+| Room "Kaunter 10" | `kaunter.mp3` + `sepuluh.mp3` |
+| Room "Kaunter 15" | `kaunter.mp3` + `satu.mp3` + `belas.mp3` |
+
+## Audio Generation (deferred)
+User to handle creation of MP3 files later.
