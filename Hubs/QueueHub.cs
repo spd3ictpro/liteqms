@@ -62,8 +62,9 @@ public class QueueHub : Hub
             if (!isSameAsCurrent || isRecall)
             {
                 var recentCalls = todayCalls
-                    .Where(r => r.PatientNumber != patientNumber)
                     .OrderByDescending(r => r.Timestamp)
+                    .GroupBy(r => r.PatientNumber)
+                    .Select(g => g.First())
                     .Take(4)
                     .Select(r => new RecentCall(r.Id, r.RoomNumber, r.PatientNumber, r.Timestamp, r.IsCNA))
                     .ToList();

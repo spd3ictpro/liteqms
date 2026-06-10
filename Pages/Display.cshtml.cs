@@ -43,13 +43,19 @@ public class DisplayModel : PageModel
 
                 if (latest != null)
                 {
-                    var recentCalls = await _db.CallRecords
+                    var allTodayCalls = await _db.CallRecords
                         .AsNoTracking()
-                        .Where(r => r.Timestamp >= today && r.Id != latest.Id)
+                        .Where(r => r.Timestamp >= today)
                         .OrderByDescending(r => r.Timestamp)
-                        .Take(5)
-                        .Select(r => new RecentCall(r.Id, r.RoomNumber, r.PatientNumber, r.Timestamp, r.IsCNA))
+                        .Take(50)
                         .ToListAsync();
+
+                    var recentCalls = allTodayCalls
+                        .GroupBy(r => r.PatientNumber)
+                        .Select(g => g.First())
+                        .Take(4)
+                        .Select(r => new RecentCall(r.Id, r.RoomNumber, r.PatientNumber, r.Timestamp, r.IsCNA))
+                        .ToList();
 
                     var callCount = await _db.CallRecords
                         .AsNoTracking()

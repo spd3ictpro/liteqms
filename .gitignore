@@ -34,6 +34,7 @@ session-*.txt
 *.temp
 
 ## Android
+debug.keystore
 *.apk
 *.aab
 *.dex
